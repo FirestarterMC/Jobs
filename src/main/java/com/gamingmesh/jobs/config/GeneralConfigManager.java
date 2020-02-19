@@ -107,7 +107,8 @@ public class GeneralConfigManager {
     public boolean fixAtMaxLevel, TitleChangeChat, TitleChangeActionBar, LevelChangeChat,
 	LevelChangeActionBar, SoundLevelupUse, SoundTitleChangeUse, UseServerAccount, EmptyServerAccountChat,
 	EmptyServerAccountActionBar, ActionBarsMessageByDefault, ShowTotalWorkers, ShowPenaltyBonus, useDynamicPayment,
-	JobsGUIOpenOnBrowse, JobsGUIShowChatBrowse, JobsGUISwitcheButtons, UseInversedClickToLeave, ShowActionNames;
+	JobsGUIOpenOnBrowse, JobsGUIShowChatBrowse, JobsGUISwitcheButtons, UseInversedClickToLeave, ShowActionNames,
+	DisableJoiningJobThroughGui;
 
     public boolean FireworkLevelupUse, UseRandom, UseFlicker, UseTrail;
     public String FireworkType;
@@ -124,7 +125,8 @@ public class GeneralConfigManager {
     public ItemStack guiBackButton;
     public ItemStack guiFiller;
 
-    public int JobsTopAmount, PlaceholdersPage;
+    public boolean UsePerPermissionForLeaving, EnableConfirmation, FilterHiddenPlayerFromTabComplete;
+    public int JobsTopAmount, PlaceholdersPage, ConfirmExpiryTime;
 
     public Integer levelLossPercentageFromMax, levelLossPercentage, SoundLevelupVolume, SoundLevelupPitch, SoundTitleChangeVolume,
 	SoundTitleChangePitch, ToplistInScoreboardInterval;
@@ -158,7 +160,10 @@ public class GeneralConfigManager {
 
     public Parser DynamicPaymentEquation;
 
+    public boolean ExploreCompact;
+
     public boolean DisabledWorldsUse;
+    public boolean UseAsWhiteListWorldList;
     public List<String> DisabledWorldsList = new ArrayList<>();
 
     public List<Schedule> BoostSchedule = new ArrayList<>();
@@ -172,34 +177,12 @@ public class GeneralConfigManager {
 
     private boolean ShowNewVersion;
 
-    public boolean EnableConfirmation;
-    public int ConfirmExpiryTime;
-
     public HashMap<String, List<String>> getCommandArgs() {
 	return commandArgs;
     }
 
     public CurrencyLimit getLimit(CurrencyType type) {
 	return currencyLimitUse.get(type);
-    }
-
-    /**
-     * @deprecated Use {@link #useBreederFinder}
-     * Sets the breeder finder boolean
-     * @param state boolean
-     */
-    @Deprecated
-    public void setBreederFinder(boolean state) {
-	this.useBreederFinder = state;
-    }
-
-    /**
-     * @deprecated Use {@link #useBreederFinder}
-     * @return boolean
-     */
-    @Deprecated
-    public boolean isUseBreederFinder() {
-	return useBreederFinder;
     }
 
     public void setTntFinder(boolean state) {
@@ -343,36 +326,48 @@ public class GeneralConfigManager {
     }
 
     public boolean canPerformActionInWorld(Entity ent) {
-	if (ent == null)
+	if (ent == null || ent.getWorld() == null)
 	    return true;
-	if (ent.getWorld() == null)
-	    return true;
+
 	return canPerformActionInWorld(ent.getWorld());
     }
 
     public boolean canPerformActionInWorld(Player player) {
 	if (player == null)
 	    return true;
+
 	return canPerformActionInWorld(player.getWorld());
     }
 
     public boolean canPerformActionInWorld(World world) {
-	if (world == null)
+	if (world == null || !DisabledWorldsUse)
 	    return true;
-	if (!this.DisabledWorldsUse)
-	    return true;
+
 	return canPerformActionInWorld(world.getName());
     }
 
     public boolean canPerformActionInWorld(String world) {
-	if (world == null)
+	if (world == null || !DisabledWorldsUse)
 	    return true;
-	if (!this.DisabledWorldsUse)
-	    return true;
-	if (this.DisabledWorldsList.isEmpty())
-	    return true;
-	if (this.DisabledWorldsList.contains(world))
+
+	if (UseAsWhiteListWorldList) {
+	    if (DisabledWorldsList.isEmpty()) {
+		return false;
+	    }
+
+	    if (DisabledWorldsList.contains(world)) {
+		return true;
+	    }
+
 	    return false;
+	}
+
+	if (DisabledWorldsList.isEmpty())
+	    return true;
+
+	if (DisabledWorldsList.contains(world))
+	    return false;
+
 	return true;
     }
 
@@ -405,7 +400,7 @@ public class GeneralConfigManager {
     private synchronized void loadGeneralSettings() {
 	try {
 	    c = new ConfigReader("generalConfig.yml");
-	} catch (Throwable t) {
+	} catch (Exception t) {
 	    t.printStackTrace();
 	}
 	if (c == null)
@@ -506,7 +501,14 @@ public class GeneralConfigManager {
 	c.addComment("Optimizations.DisabledWorlds.Use", "By setting this to true, Jobs plugin will be disabled in given worlds",
 	    "Only commands can be performed from disabled worlds with jobs.disabledworld.commands permission node");
 	DisabledWorldsUse = c.get("Optimizations.DisabledWorlds.Use", false);
+	c.addComment("Optimizations.DisabledWorlds.UseAsWhiteList", "If true, will changes the list behavior, so if a world is added to list",
+	    "the payments will only works in the given worlds.");
+	UseAsWhiteListWorldList = c.get("Optimizations.DisabledWorlds.UseAsWhiteList", false);
 	DisabledWorldsList = c.get("Optimizations.DisabledWorlds.List", Arrays.asList(Bukkit.getWorlds().get(0).getName()));
+
+	c.addComment("Optimizations.Explore.Compact",
+	    "By setting this to true when there is max amount of players explored a chunk then it will be marked as fully explored and exact players who explored it will not be saved to save some memory");
+	ExploreCompact = c.get("Optimizations.Explore.Compact", true);
 
 //	c.addComment("Optimizations.Purge.Use", "By setting this to true, Jobs plugin will clean data base on startup from all jobs with level 1 and at 0 exp");
 //	PurgeUse = c.get("Optimizations.Purge.Use", false);
@@ -977,6 +979,8 @@ public class GeneralConfigManager {
 	    "This option click type depend from SwitcheButtons option, if true using the left button and inversely.",
 	    "Don't forget to adjust locale file");
 	UseInversedClickToLeave = c.get("JobsGUI.UseInversedClickToLeave", false);
+	c.addComment("JobsGUI.DisableJoiningJobThroughGui", "Allows players to join a specified job via GUI.");
+	DisableJoiningJobThroughGui = c.get("JobsGUI.DisableJoiningJobThroughGui", false);
 	c.addComment("JobsGUI.ShowActionNames", "Do you want to show the action names in GUI?");
 	ShowActionNames = c.get("JobsGUI.ShowActionNames", true);
 	c.addComment("JobsGUI.Rows", "Defines size in rows of GUI");
@@ -990,10 +994,19 @@ public class GeneralConfigManager {
 	c.addComment("JobsGUI.SkipAmount", "Defines by how many slots we need to skip after group");
 	JobsGUISkipAmount = c.get("JobsGUI.SkipAmount", 2);
 
-	c.addComment("PageRow.JobsTop.AmountToShow", "Defines amount of players to be shown in one page for /jobs top & /jobs gtop");
-	JobsTopAmount = c.get("PageRow.JobsTop.AmountToShow", 15);
-	c.addComment("PageRow.Placeholders.AmountToShow", "Defines amount of placeholders to be shown in one page for /jobs placeholders");
-	PlaceholdersPage = c.get("PageRow.Placeholders.AmountToShow", 10);
+	c.addComment("Commands.FilterHiddenPlayersInTabComplete", "Do you want to filter the hidden player names from tab-complete?");
+	FilterHiddenPlayerFromTabComplete = c.get("Commands.FilterHiddenPlayersInTabComplete", false);
+	c.addComment("Commands.PageRow.JobsTop.AmountToShow", "Defines amount of players to be shown in one page for /jobs top & /jobs gtop");
+	JobsTopAmount = c.get("Commands.PageRow.JobsTop.AmountToShow", 15);
+	c.addComment("Commands.PageRow.Placeholders.AmountToShow", "Defines amount of placeholders to be shown in one page for /jobs placeholders");
+	PlaceholdersPage = c.get("Commands.PageRow.Placeholders.AmountToShow", 10);
+	c.addComment("Commands.JobsLeave.UsePerPermissionLeave", "Defines how job leave works.",
+	    "If this is true, then the user must have another permission to leave the job. jobs.command.leave.jobName");
+	UsePerPermissionForLeaving = c.get("Commands.JobsLeave.UsePerPermissionLeave", false);
+	c.addComment("Commands.JobsLeave.EnableConfirmation", "Allows to confirm the /jobs leave and leaveall commands, to confirm the leave.");
+	EnableConfirmation = c.get("Commands.JobsLeave.EnableConfirmation", false);
+	c.addComment("Commands.JobsLeave.ConfirmExpiryTime", "Specify the confirm expiry time.", "Time in seconds.");
+	ConfirmExpiryTime = c.get("Commands.JobsLeave.ConfirmExpiryTime", 10);
 
 	CMIMaterial tmat = null;
 	tmat = CMIMaterial.get(c.get("JobsGUI.BackButton.Material", "JACK_O_LANTERN"));
@@ -1004,11 +1017,6 @@ public class GeneralConfigManager {
 
 //	c.addComment("Schedule.Boost.Enable", "Do you want to enable scheduler for global boost?");
 //	useGlobalBoostScheduler = c.get("Schedule.Boost.Enable", false);
-
-	c.addComment("JobsLeave.EnableConfirmation", "Allows to confirm the /jobs leave and leaveall commands, to confirm the leave.");
-	EnableConfirmation = c.get("JobsLeave.EnableConfirmation", false);
-	c.addComment("JobsLeave.ConfirmExpiryTime", "Specify the confirm expiry time.", "Time in seconds.");
-	ConfirmExpiryTime = c.get("JobsLeave.ConfirmExpiryTime", 10);
 
 	c.save();
     }

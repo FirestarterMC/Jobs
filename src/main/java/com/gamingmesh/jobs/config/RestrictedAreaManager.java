@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import com.gamingmesh.jobs.Jobs;
 import com.gamingmesh.jobs.container.CuboidArea;
 import com.gamingmesh.jobs.container.RestrictedArea;
+import com.gamingmesh.jobs.hooks.HookManager;
 
 public class RestrictedAreaManager {
 
@@ -89,7 +90,6 @@ public class RestrictedAreaManager {
 		conf.set("restrictedareas." + areaKey + ".point2.z", cuboid.getHighLoc().getBlockZ());
 	    } else
 		conf.set("restrictedareas." + areaKey + ".WG", true);
-
 	}
 
 	try {
@@ -110,9 +110,9 @@ public class RestrictedAreaManager {
 	for (RestrictedArea area : getRestrictedAreasByLoc(player.getLocation())) {
 	    if (area.inRestrictedArea(player.getLocation()))
 		return area.getMultiplier();
-	    if (area.getWgName() != null && Jobs.getWorldGuardManager() != null && Jobs.getWorldGuardManager().inArea(player.getLocation(), area.getWgName()))
+	    if (area.getWgName() != null && HookManager.getWorldGuardManager() != null
+			&& HookManager.getWorldGuardManager().inArea(player.getLocation(), area.getWgName()))
 		return area.getMultiplier();
-
 	}
 	return 0D;
     }
@@ -124,8 +124,8 @@ public class RestrictedAreaManager {
 		areas.add(area.getValue());
 	}
 
-	if (Jobs.getWorldGuardManager() != null)
-	    areas.addAll(Jobs.getWorldGuardManager().getArea(loc));
+	if (HookManager.getWorldGuardManager() != null)
+	    areas.addAll(HookManager.getWorldGuardManager().getArea(loc));
 
 	return areas;
     }

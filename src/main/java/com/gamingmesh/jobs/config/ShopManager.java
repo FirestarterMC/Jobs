@@ -90,9 +90,7 @@ public class ShopManager {
     }
 
     public boolean openShopGui(Player player, Integer page) {
-
 	List<ShopItem> ls = getItemsByPage(page);
-
 	if (ls.isEmpty()) {
 	    player.sendMessage(Jobs.getLanguage().getMessage("command.shop.info.cantOpen"));
 	    return false;
@@ -108,7 +106,9 @@ public class ShopManager {
 //	if (title.length() > 32)
 //	    title = title.substring(0, 30) + "..";
 
-	PlayerPoints pointsInfo = Jobs.getPointsData().getPlayerPointsInfo(player.getUniqueId());
+	JobsPlayer jPlayer = Jobs.getPlayerManager().getJobsPlayer(player);
+
+	PlayerPoints pointsInfo = jPlayer.getPointsData();
 	double points = 0D;
 	if (pointsInfo != null)
 	    points = (int) (pointsInfo.getCurrentPoints() * 100.0) / 100.0;
@@ -155,27 +155,32 @@ public class ShopManager {
 	    if (!item.getRequiredJobs().isEmpty()) {
 		Lore.add(Jobs.getLanguage().getMessage("command.shop.info.reqJobs"));
 		for (Entry<String, Integer> one : item.getRequiredJobs().entrySet()) {
+		    Job job = Jobs.getJob(one.getKey());
+		    if (job == null) {
+			continue;
+			}
+
 		    String jobColor = "";
 		    String levelColor = "";
 
-		    Job job = Jobs.getJob(one.getKey());
-
 		    JobProgression prog = Jobs.getPlayerManager().getJobsPlayer(player).getJobProgression(job);
 		    if (prog == null) {
-			jobColor = ChatColor.DARK_RED.toString();
-			levelColor = ChatColor.DARK_RED.toString();
+			jobColor = Jobs.getLanguage().getMessage("command.shop.info.reqJobsColor");
+			levelColor = Jobs.getLanguage().getMessage("command.shop.info.reqJobsLevelColor");
 		    }
 
 		    if (prog != null && prog.getLevel() < one.getValue())
-			levelColor = ChatColor.DARK_RED.toString();
+			levelColor = Jobs.getLanguage().getMessage("command.shop.info.reqJobsLevelColor");
 
-		    Lore.add(Jobs.getLanguage().getMessage("command.shop.info.reqJobsList", "%jobsname%", jobColor + one.getKey(), "%level%", levelColor + one.getValue()));
+		    Lore.add(Jobs.getLanguage().getMessage("command.shop.info.reqJobsList", "%jobsname%",
+			jobColor + one.getKey(), "%level%", levelColor + one.getValue()));
 		}
 	    }
 
 	    if (item.getRequiredTotalLevels() != -1) {
 		Lore.add(Jobs.getLanguage().getMessage("command.shop.info.reqTotalLevel",
-		    "%totalLevel%", (Jobs.getPlayerManager().getJobsPlayer(player).getTotalLevels() < item.getRequiredTotalLevels() ? ChatColor.DARK_RED + "" : "") + item.getRequiredTotalLevels()));
+		    "%totalLevel%", (Jobs.getPlayerManager().getJobsPlayer(player).getTotalLevels() < item.getRequiredTotalLevels()
+			? Jobs.getLanguage().getMessage("command.shop.info.reqTotalLevelColor") : "") + item.getRequiredTotalLevels()));
 	    }
 
 	    meta.setLore(Lore);
@@ -191,12 +196,8 @@ public class ShopManager {
 		if (item.isHeadOwner())
 		    skullMeta.setOwner(Jobs.getPlayerManager().getJobsPlayer(player).getName());
 		else {
-		    try {
-			OfflinePlayer offPlayer = Bukkit.getOfflinePlayer(item.getCustomHead());
-			skullMeta.setOwner(offPlayer.getName());
-		    } catch (Exception e) {
-			e.printStackTrace();
-		    }
+		    OfflinePlayer offPlayer = Bukkit.getOfflinePlayer(item.getCustomHead());
+		    skullMeta.setOwner(offPlayer.getName());
 		}
 		GUIitem.setItemMeta(skullMeta);
 	    } else
@@ -373,7 +374,7 @@ public class ShopManager {
 		    String[] split = one.split("-");
 		    String job = split[0];
 		    int lvl = 1;
-		    if (split.length > 2) {
+		    if (split.length > 1) {
 			try {
 			    lvl = Integer.parseInt(split[1]);
 			} catch (NumberFormatException e) {
@@ -397,13 +398,10 @@ public class ShopManager {
 	    if (NameSection.isConfigurationSection("GiveItems")) {
 		ConfigurationSection itemsSection = NameSection.getConfigurationSection("GiveItems");
 		Set<String> itemKeys = itemsSection.getKeys(false);
-
 		List<JobItems> items = new ArrayList<>();
 
 		for (String oneItemName : itemKeys) {
-
 		    ConfigurationSection itemSection = itemsSection.getConfigurationSection(oneItemName);
-
 		    String node = oneItemName.toLowerCase();
 
 		    String id = null;
@@ -429,14 +427,13 @@ public class ShopManager {
 		    HashMap<Enchantment, Integer> enchants = new HashMap<>();
 		    if (itemSection.contains("Enchants"))
 			for (String eachLine : itemSection.getStringList("Enchants")) {
-
 			    if (!eachLine.contains("="))
 				continue;
 
 			    String[] split = eachLine.split("=");
 			    Enchantment ench = CMIEnchantment.getEnchantment(split[0]);
 			    Integer level = 1;
-			    if (split.length > 2) {
+			    if (split.length > 1) {
 				try {
 				    level = Integer.parseInt(split[1]);
 				} catch (NumberFormatException e) {

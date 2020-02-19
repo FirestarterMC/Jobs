@@ -1,6 +1,5 @@
 package com.gamingmesh.jobs.commands;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,9 +73,7 @@ public class JobsCommands implements CommandExecutor {
 	}
 
 	String cmd = args[0].toLowerCase();
-
 	Cmd cmdClass = getCmdClass(cmd);
-
 	if (cmdClass == null) {
 	    sender.sendMessage(Jobs.getLanguage().getMessage("general.error.noCommand"));
 	    return true;
@@ -114,7 +111,7 @@ public class JobsCommands implements CommandExecutor {
 	return args.length <= 1 ? new String[0] : Arrays.copyOfRange(args, 1, args.length);
     }
 
-    private boolean hasCommandPermission(CommandSender sender, String cmd) {
+    private static boolean hasCommandPermission(CommandSender sender, String cmd) {
 	return sender.hasPermission("jobs.command." + cmd);
     }
 
@@ -145,7 +142,6 @@ public class JobsCommands implements CommandExecutor {
 	commands = Sorting.sortDESC(commands);
 
 	PageInfo pi = new PageInfo(7, commands.size(), page);
-
 	if (page > pi.getTotalPages() || page < 1) {
 	    Jobs.getActionBar().send(sender, Jobs.getLanguage().getMessage("general.error.noHelpPage"));
 	    return true;
@@ -163,8 +159,7 @@ public class JobsCommands implements CommandExecutor {
 	    sender.sendMessage(msg);
 	}
 
-	plugin.ShowPagination(sender, pi.getTotalPages(), page, label + " ?");
-
+	plugin.ShowPagination(sender, pi, label + " ?");
 	return true;
     }
 
@@ -223,8 +218,7 @@ public class JobsCommands implements CommandExecutor {
 	    if (Cmd.class.isAssignableFrom(nmsClass)) {
 		cmdClass = (Cmd) nmsClass.getConstructor().newInstance();
 	    }
-	} catch (ClassNotFoundException | InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException | InvocationTargetException
-	    | SecurityException e) {
+	} catch (Exception e) {
 	}
 	return cmdClass;
     }
@@ -336,9 +330,9 @@ public class JobsCommands implements CommandExecutor {
 
 	if (sender instanceof Player)
 	    if (sender.getName().equalsIgnoreCase(player.getName()))
-		plugin.ShowPagination(sender, pi.getTotalPages(), page, "jobs info " + job.getName() + t);
+		plugin.ShowPagination(sender, pi, "jobs info " + job.getName() + t);
 	    else
-		plugin.ShowPagination(sender, pi.getTotalPages(), page, "jobs playerinfo " + player.getName() + " " + job.getName() + t);
+		plugin.ShowPagination(sender, pi, "jobs playerinfo " + player.getName() + " " + job.getName() + t);
     }
 
     /**
@@ -349,7 +343,6 @@ public class JobsCommands implements CommandExecutor {
      * @return the message
      */
     public static String jobInfoMessage(JobsPlayer player, Job job, ActionType type) {
-
 	// money exp boost
 	Boost boost = Jobs.getPlayerManager().getFinalBonus(player, job, true);
 
@@ -461,7 +454,7 @@ public class JobsCommands implements CommandExecutor {
      */
     public String jobStatsMessageArchive(JobsPlayer jPlayer, JobProgression jobProg) {
 	int level = jPlayer.getLevelAfterRejoin(jobProg);
-	int exp = jPlayer.getExpAfterRejoin(jobProg, jPlayer.getLevelAfterRejoin(jobProg));
+	double exp = jPlayer.getExpAfterRejoin(jobProg, jPlayer.getLevelAfterRejoin(jobProg));
 	String message = Jobs.getLanguage().getMessage("command.stats.output",
 	    "%joblevel%", level,
 	    "%jobname%", jobProg.getJob().getChatColor() + jobProg.getJob().getName(),

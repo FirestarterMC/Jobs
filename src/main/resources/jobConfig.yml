@@ -62,14 +62,14 @@ Jobs:
     #   baseincome - the income for the action at level 1 (as set in the configuration).
     #   joblevel - the level the player has attained in the job.
     # NOTE: Please take care of the brackets when modifying this equation.
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     # Equation used for calculating how much points is given per action for the job level.
     # Available parameters:
     #   numjobs - the number of jobs the player has
     #   basepoints - the points for the action at level 1 (as set in the configuration).
     #   joblevel - the level the player has attained in the job.
     # NOTE: Please take care of the brackets when modifying this equation.
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
      # Equation used for calculating how much experience is given per action for the job level.
     # Available parameters:
     #   numjobs - the number of jobs the player has
@@ -108,11 +108,14 @@ Jobs:
         # List of objectives this quest will require for it to count as finished
         # you can have as many objectives as you want
         Objectives:
-        # This should be in a format as [actionType];[actionTarget];[amount]
+        # This should be in a format as [actionType];[actionTarget, actionTarget];[amount]
         # [actionType] can be any valid job action. Look lower for all possible action types
-        # [actionTarget] can be material name, block type, entity name and so on. This is defined in same way as any generic payable job action
+        # [actionTarget] can be material name, block type, entity name and so on.
+        #   - This is defined in same way as any generic payable job action.
+        #   - You can use multiple names separated by commas "," to avoid creating many rows.
         # [amount] is how many times player should perform this action to complete quest
         - Break;17-0;300
+        #- Place;stone,cobblestone;5
         # Command list to be performed after quest is finished.
         # Use [playerName] to insert players name who finished that quest
         RewardCommands:
@@ -233,6 +236,14 @@ Jobs:
         income: 1.5
         points: 1.5
         experience: 1.5
+      beehive-5:
+        income: 2.5
+        points: 2.5
+        experience: 2.5
+      bee_nest-5:
+        income: 2.5
+        points: 2.5
+        experience: 2.5
     # Payment for cooking raw foods
     Bake:
       beef:
@@ -473,12 +484,14 @@ Jobs:
     # permissions granted for joining class
     permissions:
       # example node
-      aaaaaatest.node:
+      # NOTE: You should use "_" instead of "." dot, because the file will be saved on
+      # plugin load, so it will changes the configuration.
+      aaaaaatest_node:
         # true to give, false to revoke
         value: true
         # minimum level needed to grant permission. Use 0 for all levels
         level: 0
-      aaaaaatest.node2:
+      aaaaaatest_node2:
         value: true
         # Permission granted when reaching level 10
         level: 10
@@ -578,8 +591,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -695,8 +708,8 @@ Jobs:
     max-level: 200
     #slots: 10
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1    
@@ -891,8 +904,8 @@ Jobs:
     max-level: 200
     #slots: 10
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -1122,10 +1135,6 @@ Jobs:
         points: 1.5
         experience: 2
       jungle_stairs:
-        income: 1.5
-        points: 1.5
-        experience: 2
-      nether_brick_stairs:
         income: 1.5
         points: 1.5
         experience: 2
@@ -1647,8 +1656,8 @@ Jobs:
     max-level: 200
     #slots: 10
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -1716,8 +1725,8 @@ Jobs:
     max-level: 200
     #slots: 10
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -2109,8 +2118,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -2268,8 +2277,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -2320,8 +2329,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -2665,70 +2674,6 @@ Jobs:
         income: 0.2
         points: 0.2
         experience: 0.2
-      white_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      orange_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      magenta_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      light_blue_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      yellow_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      lime_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      pink_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      gray_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      light_gray_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      cyan_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      purple_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      blue_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      brown_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      green_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      red_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
-      black_stained_glass:
-        income: 0.2
-        points: 0.2
-        experience: 0.2
       slime_block:
         income: 1.0
         points: 1.0
@@ -2871,8 +2816,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -2921,8 +2866,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -3073,8 +3018,8 @@ Jobs:
     chat-display: full
     max-level: 200
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -3172,8 +3117,8 @@ Jobs:
     max-level: 200
     #slots: 10
     leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
     experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
     rejoinCooldown: 10
     maxDailyQuests: 1
@@ -3349,17 +3294,14 @@ Jobs:
       #  income: 20.0
       #  points: 20.0
       #  experience: 20.0
+  # This is default job players will have if they dint joined any
+  # When players join any job, they will loose access to this one
+  # You can set this to give out some money for basic actions, like killing players or breaking some blocks but job will not be visible and you can't level it up
+  # leveling-progression-equation and experience-progression-equation doesnt have any impact for this job
   None:
     fullname: None
     shortname: N
     ChatColour: WHITE
     chat-display: none
-    #max-level: 10
-    #slots: 10
-    leveling-progression-equation: 10*(joblevel)+(joblevel*joblevel*4)
-    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))
-    experience-progression-equation: baseexperience-(baseexperience*((numjobs-1) *0.01))
-    Kill:
-      Player:
-        income: 7.5
+    income-progression-equation: baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(baseincome*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))
+    points-progression-equation: basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(basepoints*(joblevel-1)*0.01)) * ((numjobs-1)*0.05))

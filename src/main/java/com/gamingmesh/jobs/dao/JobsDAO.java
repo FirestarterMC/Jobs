@@ -65,7 +65,6 @@ public abstract class JobsDAO {
 
 	worldsTableFields(String type, boolean unique) {
 	    this.type = type;
-
 	    this.unique = unique;
 	}
 
@@ -98,7 +97,6 @@ public abstract class JobsDAO {
 
 	jobsNameTableFields(String type, boolean unique) {
 	    this.type = type;
-
 	    this.unique = unique;
 	}
 
@@ -129,7 +127,6 @@ public abstract class JobsDAO {
 
 	UserTableFields(String type) {
 	    this.type = type;
-
 	}
 
 	@Override
@@ -151,7 +148,7 @@ public abstract class JobsDAO {
     public enum JobsTableFields implements JobsTableInterface {
 	userid("int"),
 	job("text"),
-	experience("int"),
+	experience("double"),
 	level("int"),
 	jobid("int");
 
@@ -159,7 +156,6 @@ public abstract class JobsDAO {
 
 	JobsTableFields(String type) {
 	    this.type = type;
-
 	}
 
 	@Override
@@ -190,7 +186,6 @@ public abstract class JobsDAO {
 
 	ArchiveTableFields(String type) {
 	    this.type = type;
-
 	}
 
 	@Override
@@ -222,7 +217,6 @@ public abstract class JobsDAO {
 
 	BlockTableFields(String type) {
 	    this.type = type;
-
 	}
 
 	@Override
@@ -252,7 +246,6 @@ public abstract class JobsDAO {
 
 	LimitTableFields(String type) {
 	    this.ttype = type;
-
 	}
 
 	@Override
@@ -285,7 +278,6 @@ public abstract class JobsDAO {
 
 	LogTableFields(String type) {
 	    this.type = type;
-
 	}
 
 	@Override
@@ -313,7 +305,6 @@ public abstract class JobsDAO {
 
 	PointsTableFields(String type) {
 	    this.type = type;
-
 	}
 
 	@Override
@@ -623,16 +614,14 @@ public abstract class JobsDAO {
 	    prest.setInt(1, id);
 	    res = prest.executeQuery();
 	    while (res.next()) {
-
 		int jobId = res.getInt(JobsTableFields.jobid.getCollumn());
-
 		if (jobId == 0) {
-		    jobs.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
+		    jobs.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		} else {
 		    Job job = Jobs.getJob(jobId);
-		    jobs.add(new JobsDAOData(job.getName(), res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
+		    if (job != null)
+		    jobs.add(new JobsDAOData(job.getName(), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		}
-
 	    }
 	} catch (SQLException e) {
 	    e.printStackTrace();
@@ -660,17 +649,18 @@ public abstract class JobsDAO {
 		    ls = new ArrayList<>();
 
 		int jobId = res.getInt(JobsTableFields.jobid.getCollumn());
-
 		if (jobId == 0) {
-		    ls.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
+		    ls.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		    converted = false;
 		} else {
 		    // This should be removed when we switch over to id only method
 		    if (converted)
 			if (res.getString(JobsTableFields.job.getCollumn()) == null || res.getString(JobsTableFields.job.getCollumn()).isEmpty())
 			    converted = false;
+
 		    Job job = Jobs.getJob(jobId);
-		    ls.add(new JobsDAOData(job.getName(), res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
+		    if (job != null)
+			ls.add(new JobsDAOData(job.getName(), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		}
 
 		map.put(id, ls);
@@ -769,7 +759,6 @@ public abstract class JobsDAO {
 	    prest.setInt(1, time);
 	    res = prest.executeQuery();
 	    while (res.next()) {
-
 		int id = res.getInt(LogTableFields.userid.getCollumn());
 
 		HashMap<String, Log> m = map.get(id);
@@ -1188,6 +1177,7 @@ public abstract class JobsDAO {
 	JobsConnection conn = getConnection();
 	if (conn == null)
 	    return 0;
+
 	int count = 0;
 	PreparedStatement prest = null;
 	PreparedStatement prest2 = null;
@@ -1198,21 +1188,20 @@ public abstract class JobsDAO {
 	    prest.setString(1, JobName);
 	    res = prest.executeQuery();
 	    while (res.next()) {
-		count = res.getInt(1);
-		break;
+		count += res.getInt(1);
 	    }
 
-	    Job job = Jobs.getJob(JobName);
-	    if (job != null && job.getId() != 0) {
-		prest2 = conn.prepareStatement("SELECT COUNT(*) FROM `" + getJobsTableName() + "` WHERE `" + JobsTableFields.jobid + "` = ?;");
-		prest2.setInt(1, job.getId());
-		res2 = prest2.executeQuery();
-		while (res2.next()) {
-		    count += res2.getInt(1);
-		    break;
+	    if (count == 0) {
+		Job job = Jobs.getJob(JobName);
+		if (job != null && job.getId() != 0) {
+		    prest2 = conn.prepareStatement("SELECT COUNT(*) FROM `" + getJobsTableName() + "` WHERE `" + JobsTableFields.jobid + "` = ?;");
+		    prest2.setInt(1, job.getId());
+		    res2 = prest2.executeQuery();
+		    while (res2.next()) {
+			count += res2.getInt(1);
+		    }
 		}
 	    }
-
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	} finally {
@@ -1259,13 +1248,12 @@ public abstract class JobsDAO {
 	    prest.setInt(1, info.getID());
 	    res = prest.executeQuery();
 	    while (res.next()) {
-
 		int jobId = res.getInt(JobsTableFields.jobid.getCollumn());
 		if (jobId == 0) {
-		    jobs.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
+		    jobs.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		} else {
 		    Job job = Jobs.getJob(jobId);
-		    jobs.add(new JobsDAOData(job.getName(), res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
+		    jobs.add(new JobsDAOData(job.getName(), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		}
 	    }
 	} catch (SQLException e) {
@@ -1426,7 +1414,7 @@ public abstract class JobsDAO {
 	    prest.setInt(1, jPlayer.getUserId());
 	    prest.setInt(2, job.getJob().getId());
 	    prest.setInt(3, level);
-	    prest.setInt(4, exp.intValue());
+	    prest.setDouble(4, exp);
 	    prest.setString(5, job.getJob().getName());
 	    prest.execute();
 	} catch (SQLException e) {
@@ -1447,7 +1435,7 @@ public abstract class JobsDAO {
 	    return;
 	PreparedStatement prest = null;
 	try {
-	    int exp = (int) prog.getExperience();
+	    double exp = prog.getExperience();
 	    if (exp < 0)
 		exp = 0;
 	    prest = conn.prepareStatement("INSERT INTO `" + getJobsTableName() + "` (`" + JobsTableFields.userid.getCollumn() + "`, `" + JobsTableFields.jobid.getCollumn()
@@ -1455,7 +1443,7 @@ public abstract class JobsDAO {
 	    prest.setInt(1, jPlayer.getUserId());
 	    prest.setInt(2, prog.getJob().getId());
 	    prest.setInt(3, prog.getLevel());
-	    prest.setInt(4, exp);
+	    prest.setDouble(4, exp);
 	    prest.setString(5, prog.getJob().getName());
 	    prest.execute();
 	} catch (SQLException e) {
@@ -1689,11 +1677,10 @@ public abstract class JobsDAO {
      */
     public List<TopList> getQuestTopList(int start) {
 	JobsConnection conn = getConnection();
-
 	List<TopList> names = new ArrayList<>();
-
 	if (conn == null)
 	    return names;
+
 	PreparedStatement prest = null;
 	ResultSet res = null;
 	try {
@@ -1707,10 +1694,10 @@ public abstract class JobsDAO {
 		PlayerInfo info = Jobs.getPlayerManager().getPlayerInfo(res.getInt("id"));
 		if (info == null)
 		    continue;
-		if (info.getName() == null)
-		    continue;
+
 		TopList top = new TopList(info, res.getInt(UserTableFields.donequests.getCollumn()), 0);
 		names.add(top);
+
 		if (names.size() >= Jobs.getGCManager().JobsTopAmount)
 		    break;
 	    }
@@ -1760,7 +1747,7 @@ public abstract class JobsDAO {
 	PreparedStatement prest = null;
 	ResultSet res = null;
 	try {
-	    prest = conn.prepareStatement("SELECT *  FROM `" + DBTables.UsersTable.getTableName() + "`;");
+	    prest = conn.prepareStatement("SELECT * FROM `" + DBTables.UsersTable.getTableName() + "`;");
 	    res = prest.executeQuery();
 	    while (res.next()) {
 		long seen = System.currentTimeMillis();
@@ -1786,9 +1773,7 @@ public abstract class JobsDAO {
     }
 
     public JobsPlayer loadFromDao(JobsPlayer jPlayer) {
-
 	List<JobsDAOData> list = getAllJobs(jPlayer.getName(), jPlayer.getUniqueId());
-//	synchronized (jPlayer.saveLock) {
 	jPlayer.progression.clear();
 	for (JobsDAOData jobdata : list) {
 	    if (!plugin.isEnabled())
@@ -1809,17 +1794,14 @@ public abstract class JobsDAO {
 	jPlayer.reloadLimits();
 	jPlayer.setUserId(Jobs.getPlayerManager().getPlayerId(jPlayer.getUniqueId()));
 	loadPoints(jPlayer);
-//	}
 	return jPlayer;
     }
 
     public JobsPlayer loadFromDao(OfflinePlayer player) {
-
 	JobsPlayer jPlayer = new JobsPlayer(player.getName());
 	jPlayer.setPlayerUUID(player.getUniqueId());
 
 	List<JobsDAOData> list = getAllJobs(player);
-//	synchronized (jPlayer.saveLock) {
 	jPlayer.progression.clear();
 	for (JobsDAOData jobdata : list) {
 	    if (!plugin.isEnabled())
@@ -1840,7 +1822,6 @@ public abstract class JobsDAO {
 	jPlayer.reloadLimits();
 	jPlayer.setUserId(Jobs.getPlayerManager().getPlayerId(player.getUniqueId()));
 	loadPoints(jPlayer);
-//	}
 	return jPlayer;
     }
 
@@ -1913,7 +1894,7 @@ public abstract class JobsDAO {
 		+ "` = ? WHERE `" + JobsTableFields.userid.getCollumn() + "` = ? AND `" + JobsTableFields.jobid.getCollumn() + "` = ?;");
 	    for (JobProgression progression : player.getJobProgression()) {
 		prest.setInt(1, progression.getLevel());
-		prest.setInt(2, (int) progression.getExperience());
+		prest.setDouble(2, progression.getExperience());
 		prest.setInt(3, player.getUserId());
 		prest.setInt(4, progression.getJob().getId());
 		prest.execute();
@@ -1926,7 +1907,6 @@ public abstract class JobsDAO {
     }
 
     public void updateSeen(JobsPlayer player) {
-
 	if (player.getUserId() == -1) {
 	    insertPlayer(player);
 	    return;
@@ -1980,7 +1960,7 @@ public abstract class JobsDAO {
 	PreparedStatement prest = null;
 	ResultSet res = null;
 	try {
-	    prest = conn.prepareStatement("SELECT `id`,`" + UserTableFields.donequests.getCollumn()
+	    prest = conn.prepareStatement("SELECT `id`, `" + UserTableFields.donequests.getCollumn()
 		+ "` FROM `" + DBTables.UsersTable.getTableName() + "` WHERE `" + UserTableFields.player_uuid.getCollumn() + "` = ?;");
 	    prest.setString(1, player.getUniqueId().toString());
 	    res = prest.executeQuery();
@@ -2018,7 +1998,7 @@ public abstract class JobsDAO {
 
 	PreparedStatement prest = null;
 	try {
-	    PlayerPoints pointInfo = Jobs.getPointsData().getPlayerPointsInfo(jPlayer.getUniqueId());
+	    PlayerPoints pointInfo = jPlayer.getPointsData();
 	    prest = conn.prepareStatement("INSERT INTO `" + DBTables.PointsTable.getTableName() + "` (`" + PointsTableFields.totalpoints.getCollumn() + "`, `" + PointsTableFields.currentpoints.getCollumn()
 		+ "`, `" + PointsTableFields.userid.getCollumn() + "`) VALUES (?, ?, ?);");
 	    prest.setDouble(1, pointInfo.getTotalPoints());
@@ -2045,9 +2025,8 @@ public abstract class JobsDAO {
 	    res = prest.executeQuery();
 
 	    if (res.next()) {
-		Jobs.getPointsData().addPlayer(player.getUniqueId(), res.getDouble(PointsTableFields.currentpoints.getCollumn()), res.getDouble(PointsTableFields.totalpoints.getCollumn()));
-	    } else {
-		Jobs.getPointsData().addPlayer(player.getUniqueId());
+		player.getPointsData().setPoints(res.getDouble(PointsTableFields.currentpoints.getCollumn()));
+		player.getPointsData().setTotalPoints(res.getDouble(PointsTableFields.totalpoints.getCollumn()));
 	    }
 	} catch (SQLException e) {
 	    e.printStackTrace();
@@ -2556,12 +2535,17 @@ public abstract class JobsDAO {
 	JobsConnection conn = getConnection();
 	if (conn == null)
 	    return jobs;
-	PreparedStatement prest = null;
-	ResultSet res = null;
 
 	Job job = Jobs.getJob(jobsname);
 	if (job == null)
 	    return jobs;
+
+	PreparedStatement prest = null;
+	ResultSet res = null;
+
+	if (limit < 0) {
+	    limit = 0;
+	}
 
 	try {
 	    prest = conn.prepareStatement("SELECT `" + JobsTableFields.userid.getCollumn() + "`, `" + JobsTableFields.level.getCollumn() + "`, `" + JobsTableFields.experience.getCollumn() + "` FROM `"
@@ -2572,12 +2556,9 @@ public abstract class JobsDAO {
 
 	    while (res.next()) {
 		PlayerInfo info = Jobs.getPlayerManager().getPlayerInfo(res.getInt(JobsTableFields.userid.getCollumn()));
-
 		if (info == null)
 		    continue;
 
-		if (info.getName() == null)
-		    continue;
 		jobs.add(new TopList(info, res.getInt(JobsTableFields.level.getCollumn()), res.getInt(JobsTableFields.experience.getCollumn())));
 	    }
 	} catch (SQLException e) {
@@ -2586,6 +2567,7 @@ public abstract class JobsDAO {
 	    close(res);
 	    close(prest);
 	}
+
 	return jobs;
     }
 

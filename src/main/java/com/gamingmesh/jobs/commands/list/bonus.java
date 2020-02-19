@@ -11,6 +11,7 @@ import com.gamingmesh.jobs.container.Boost;
 import com.gamingmesh.jobs.container.CurrencyType;
 import com.gamingmesh.jobs.container.Job;
 import com.gamingmesh.jobs.container.JobsPlayer;
+import com.gamingmesh.jobs.hooks.HookManager;
 import com.gamingmesh.jobs.stuff.ChatColor;
 
 public class bonus implements Cmd {
@@ -31,7 +32,7 @@ public class bonus implements Cmd {
 	Player player = (Player) sender;
 	Job job = Jobs.getJob(args[0]);
 	if (job == null) {
-		player.sendMessage(Jobs.getLanguage().getMessage("general.error.job"));
+	    player.sendMessage(Jobs.getLanguage().getMessage("general.error.job"));
 	    return true;
 	}
 
@@ -53,16 +54,17 @@ public class bonus implements Cmd {
 	    printBoost(sender, boost, BoostOf.NearSpawner);
 	printBoost(sender, boost, BoostOf.PetPay);
 
-	if (Jobs.getMcMMOManager().mcMMOPresent || Jobs.getMcMMOManager().mcMMOOverHaul && boost.get(BoostOf.McMMO, CurrencyType.EXP) != 0D)
+	if (HookManager.getMcMMOManager().mcMMOPresent ||
+	    HookManager.getMcMMOManager().mcMMOOverHaul && boost.get(BoostOf.McMMO, CurrencyType.EXP) != 0D)
 	    printBoost(sender, boost, BoostOf.McMMO);
 
 	player.sendMessage(Jobs.getLanguage().getMessage("general.info.separator"));
 
 	RawMessage rm = new RawMessage();
 	String msg = Jobs.getLanguage().getMessage("command.bonus.output.final",
-	    "%money%", mc + formatText(boost.getFinal(CurrencyType.MONEY, true, true)),
-	    "%points%", pc + formatText(boost.getFinal(CurrencyType.POINTS, true, true)),
-	    "%exp%", ec + formatText(boost.getFinal(CurrencyType.EXP, true, true)));
+	    "%money%", formatText(boost.getFinal(CurrencyType.MONEY, true, true)),
+	    "%points%", formatText(boost.getFinal(CurrencyType.POINTS, true, true)),
+	    "%exp%", formatText(boost.getFinal(CurrencyType.EXP, true, true)));
 
 	rm.addText(msg);
 	rm.addHoverText(Jobs.getLanguage().getMessage("command.bonus.output.finalExplanation"));
@@ -72,18 +74,15 @@ public class bonus implements Cmd {
 	return true;
     }
 
-    String mc = ChatColor.DARK_GREEN.toString();
-    String pc = ChatColor.GOLD.toString();
-    String ec = ChatColor.YELLOW.toString();
-
-    private void printBoost(CommandSender sender, Boost boost, BoostOf type) {
+    private static void printBoost(CommandSender sender, Boost boost, BoostOf type) {
 	String prefix = ChatColor.GOLD + "*";
 	if (type != BoostOf.NearSpawner && type != BoostOf.PetPay)
 	    prefix = "";
+
 	String msg = Jobs.getLanguage().getMessage("command.bonus.output." + type.name().toLowerCase(),
-	    "%money%", mc + formatText(boost.get(type, CurrencyType.MONEY, true)),
-	    "%points%", pc + formatText(boost.get(type, CurrencyType.POINTS, true)),
-	    "%exp%", ec + formatText(boost.get(type, CurrencyType.EXP, true)));
+	    "%money%", formatText(boost.get(type, CurrencyType.MONEY, true)),
+	    "%points%", formatText(boost.get(type, CurrencyType.POINTS, true)),
+	    "%exp%", formatText(boost.get(type, CurrencyType.EXP, true)));
 
 	if (msg.startsWith(" ") && (type == BoostOf.NearSpawner || type == BoostOf.PetPay))
 	    msg = msg.substring(1, msg.length());

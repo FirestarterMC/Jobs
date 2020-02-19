@@ -18,6 +18,7 @@ import com.gamingmesh.jobs.CMILib.ConfigReader;
 import com.gamingmesh.jobs.container.ActionType;
 import com.gamingmesh.jobs.container.JobInfo;
 import com.gamingmesh.jobs.container.NameList;
+import com.gamingmesh.jobs.hooks.HookManager;
 import com.gamingmesh.jobs.stuff.Util;
 
 public class NameTranslatorManager {
@@ -25,6 +26,7 @@ public class NameTranslatorManager {
     public HashMap<CMIMaterial, NameList> ListOfNames = new HashMap<>();
     public ArrayList<NameList> ListOfEntities = new ArrayList<>();
     public HashMap<String, NameList> ListOfEnchants = new HashMap<>();
+    public HashMap<String, NameList> ListOfMMEntities = new HashMap<>();
     public ArrayList<NameList> ListOfColors = new ArrayList<>();
 
     public String Translate(String materialName, JobInfo info) {
@@ -40,16 +42,37 @@ public class NameTranslatorManager {
 	    case EAT:
 	    case CRAFT:
 	    case DYE:
+	    case COLLECT:
+	    case BAKE:
 	    case PLACE:
 	    case SMELT:
 	    case REPAIR:
 	    case BREW:
 	    case FISH:
 	    case STRIPLOGS:
-		CMIMaterial mat = CMIMaterial.get(materialName);
+		materialName = materialName.replace(" ", "");
+
+		CMIMaterial mat = CMIMaterial.get(materialName.replace(" ", ""));
 		NameList nameLs = ListOfNames.get(mat);
-		if (nameLs == null)
-		    return mat.getName();
+		if (nameLs == null) {
+		    return mat.getName(); 
+		}
+
+		if (meta != null && !meta.isEmpty()) {
+		    mat = CMIMaterial.get(materialName + ":" + meta);
+		    nameLs = ListOfNames.get(mat);
+		    if (nameLs == null) {
+			return mat.getName();
+		    }
+		}
+
+		if (id != null && id > 0 && meta != null && !meta.isEmpty()) {
+		    mat = CMIMaterial.get(id + ":" + meta);
+		    nameLs = ListOfNames.get(mat);
+		    if (nameLs == null) {
+			return mat.getName();
+		    }
+		}
 
 		return nameLs.getName();
 	    case BREED:
@@ -95,9 +118,10 @@ public class NameTranslatorManager {
 		}
 		break;
 	    case MMKILL:
-		if (Jobs.getMythicManager() == null)
-		    return materialName; 
-		return Jobs.getMythicManager().getDisplayName(materialName);
+		NameList got = ListOfMMEntities.get(materialName.toLowerCase());
+		if (got != null && got.getName() != null)
+		    return got.getName();
+		return HookManager.getMythicManager() == null ? materialName : HookManager.getMythicManager().getDisplayName(materialName);
 	    default:
 		break;
 	    }
@@ -106,9 +130,11 @@ public class NameTranslatorManager {
     }
 
     public void readFile() {
-
-	YmlMaker ItemFile = new YmlMaker(Jobs.getInstance(), "TranslatableWords" + File.separator + "Words_" + Jobs.getGCManager().localeString + ".yml");
-	ItemFile.saveDefaultConfig();
+	YmlMaker ItemFile = new YmlMaker(Jobs.getInstance(), "TranslatableWords" + File.separator + "Words_"
+	    + Jobs.getGCManager().localeString + ".yml");
+	if (!ItemFile.getConfigFile().getName().equalsIgnoreCase("en")) {
+	    ItemFile.saveDefaultConfig();
+	}
 
 	if (ItemFile.getConfig().isConfigurationSection("ItemList")) {
 	    ConfigurationSection section = ItemFile.getConfig().getConfigurationSection("ItemList");
@@ -145,6 +171,19 @@ public class NameTranslatorManager {
 	} else
 	    Jobs.consoleMsg("&c[Jobs] The EntityList section not found in " + ItemFile.fileName + " file.");
 
+	if (ItemFile.getConfig().isConfigurationSection("MythicEntityList")) {
+	    ConfigurationSection section = ItemFile.getConfig().getConfigurationSection("MythicEntityList");
+	    Set<String> keys = section.getKeys(false);
+	    ListOfMMEntities.clear();
+	    for (String one : keys) {
+		String Name = ItemFile.getConfig().getString("MythicEntityList." + one);
+		ListOfMMEntities.put(one.toLowerCase(), new NameList(null, null, Name, Name));
+	    }
+	    if (ListOfMMEntities.size() > 0)
+		Jobs.consoleMsg("&e[Jobs] Loaded " + ListOfMMEntities.size() + " custom MythicMobs names!");
+	} else
+	    Jobs.consoleMsg("&c[Jobs] The MythicEntityList section not found in " + ItemFile.fileName + " file.");
+
 	if (ItemFile.getConfig().isConfigurationSection("EnchantList")) {
 	    ConfigurationSection section = ItemFile.getConfig().getConfigurationSection("EnchantList");
 	    Set<String> keys = section.getKeys(false);
@@ -174,6 +213,7 @@ public class NameTranslatorManager {
 	    Jobs.consoleMsg("&c[Jobs] The ColorList section not found in " + ItemFile.fileName + " file.");
     }
 
+    @SuppressWarnings("deprecation")
     synchronized void load() {
 	String ls = Jobs.getGCManager().localeString;
 	if (ls.isEmpty())
@@ -383,6 +423,13 @@ public class NameTranslatorManager {
 	    
 	    		c.get("ColorList." + cn.getId() + "-" + cn.toString(), name);
 	    }*/
+
+	    if (!c.getC().isConfigurationSection("MythicEntityList")) {
+		c.get("MythicEntityList.AngrySludge", "Angry Sludge");
+		c.get("MythicEntityList.SkeletalKnight", "Skeletal Knight");
+	    } else {
+		c.set("MythicEntityList", c.getC().get("MythicEntityList"));
+	    }
 
 	    c.save();
 	}

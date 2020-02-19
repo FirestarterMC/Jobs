@@ -65,6 +65,7 @@ import com.gamingmesh.jobs.dao.JobsDAO;
 import com.gamingmesh.jobs.dao.JobsDAOData;
 import com.gamingmesh.jobs.economy.PaymentData;
 import com.gamingmesh.jobs.economy.PointsData;
+import com.gamingmesh.jobs.hooks.HookManager;
 import com.gamingmesh.jobs.stuff.PerformCommands;
 import com.gamingmesh.jobs.stuff.Util;
 
@@ -82,7 +83,7 @@ public class PlayerManager {
     private HashMap<String, PlayerInfo> PlayerNameMap = new HashMap<>();
 
     /**
-     * @deprecated Use {@link Jobs}.{@link Jobs#getPointsData} instead
+     * @deprecated Use {@link Jobs#getPointsData} instead
      * @return {@link PointsData}
      */
     @Deprecated
@@ -222,6 +223,13 @@ public class PlayerManager {
 	}
     }
 
+    public void removePlayerAdditions() {
+	for (JobsPlayer jPlayer : players.values()) {
+	    jPlayer.clearBossMaps();
+	    jPlayer.clearUpdateBossBarFor();
+	}
+    }
+
     /**
      * Save all the information of all of the players in the game
      */
@@ -311,12 +319,9 @@ public class PlayerManager {
      * @param player - the player who's job you're getting
      * @return the player job info of the player
      */
-    public JobsPlayer getJobsPlayerOffline(PlayerInfo info, List<JobsDAOData> jobs, PlayerPoints points, HashMap<String, Log> logs, ArchivedJobs archivedJobs, PaymentData limits) {
-
+    public JobsPlayer getJobsPlayerOffline(PlayerInfo info, List<JobsDAOData> jobs, PlayerPoints points,
+	HashMap<String, Log> logs, ArchivedJobs archivedJobs, PaymentData limits) {
 	if (info == null)
-	    return null;
-
-	if (info.getName() == null)
 	    return null;
 
 	JobsPlayer jPlayer = new JobsPlayer(info.getName());
@@ -327,11 +332,10 @@ public class PlayerManager {
 
 	if (jobs != null)
 	    for (JobsDAOData jobdata : jobs) {
-		if (Jobs.getJob(jobdata.getJobName()) == null)
-		    continue;
 		Job job = Jobs.getJob(jobdata.getJobName());
 		if (job == null)
 		    continue;
+
 		JobProgression jobProgression = new JobProgression(job, jPlayer, jobdata.getLevel(), jobdata.getExperience());
 		jPlayer.progression.add(jobProgression);
 		jPlayer.reloadMaxExperience();
@@ -339,9 +343,7 @@ public class PlayerManager {
 	    }
 
 	if (points != null)
-	    Jobs.getPointsData().addPlayer(jPlayer.getUniqueId(), points);
-	else
-	    Jobs.getPointsData().addPlayer(jPlayer.getUniqueId());
+	    jPlayer.setPoints(points);
 
 	if (logs != null)
 	    jPlayer.setLog(logs);
@@ -370,7 +372,6 @@ public class PlayerManager {
      * @param job
      */
     public void joinJob(JobsPlayer jPlayer, Job job) {
-//	synchronized (jPlayer.saveLock) {
 	if (jPlayer.isInJob(job))
 	    return;
 	// let the user join the job
@@ -385,12 +386,12 @@ public class PlayerManager {
 	    return;
 
 	Jobs.getJobsDAO().joinJob(jPlayer, jPlayer.getJobProgression(job));
+
 	PerformCommands.PerformCommandsOnJoin(jPlayer, job);
 	Jobs.takeSlot(job);
 	Jobs.getSignUtil().SignUpdate(job);
 	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
 	job.updateTotalPlayers();
-//	}
     }
 
     /**
@@ -399,7 +400,6 @@ public class PlayerManager {
      * @param job
      */
     public boolean leaveJob(JobsPlayer jPlayer, Job job) {
-//	synchronized (jPlayer.saveLock) {
 	if (!jPlayer.isInJob(job))
 	    return false;
 
@@ -423,7 +423,6 @@ public class PlayerManager {
 	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
 	job.updateTotalPlayers();
 	return true;
-//	}
     }
 
     /**
@@ -445,7 +444,6 @@ public class PlayerManager {
      * @param newjob - the new job
      */
     public boolean transferJob(JobsPlayer jPlayer, Job oldjob, Job newjob) {
-//	synchronized (jPlayer.saveLock) {
 	if (!jPlayer.transferJob(oldjob, newjob))
 	    return false;
 
@@ -456,7 +454,6 @@ public class PlayerManager {
 	dao.joinJob(jPlayer, jPlayer.getJobProgression(newjob));
 	newjob.updateTotalPlayers();
 	jPlayer.save();
-//	}
 	return true;
     }
 
@@ -467,13 +464,11 @@ public class PlayerManager {
      * @param levels - number of levels to promote
      */
     public void promoteJob(JobsPlayer jPlayer, Job job, int levels) {
-//	synchronized (jPlayer.saveLock) {
 	jPlayer.promoteJob(job, levels);
 	jPlayer.save();
 
 	Jobs.getSignUtil().SignUpdate(job);
 	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
-//	}
     }
 
     /**
@@ -483,12 +478,10 @@ public class PlayerManager {
      * @param levels - number of levels to demote
      */
     public void demoteJob(JobsPlayer jPlayer, Job job, int levels) {
-//	synchronized (jPlayer.saveLock) {
 	jPlayer.demoteJob(job, levels);
 	jPlayer.save();
 	Jobs.getSignUtil().SignUpdate(job);
 	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
-//	}
     }
 
     /**
@@ -498,7 +491,6 @@ public class PlayerManager {
      * @param experience - experience gained
      */
     public void addExperience(JobsPlayer jPlayer, Job job, double experience) {
-//	synchronized (jPlayer.saveLock) {
 	JobProgression prog = jPlayer.getJobProgression(job);
 	if (prog == null)
 	    return;
@@ -510,7 +502,6 @@ public class PlayerManager {
 	}
 
 	jPlayer.save();
-//	}
     }
 
     /**
@@ -520,7 +511,6 @@ public class PlayerManager {
      * @param experience - experience gained
      */
     public void removeExperience(JobsPlayer jPlayer, Job job, double experience) {
-//	synchronized (jPlayer.saveLock) {
 	JobProgression prog = jPlayer.getJobProgression(job);
 	if (prog == null)
 	    return;
@@ -529,7 +519,6 @@ public class PlayerManager {
 	jPlayer.save();
 	Jobs.getSignUtil().SignUpdate(job);
 	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
-//	}
     }
 
     /**
@@ -539,11 +528,11 @@ public class PlayerManager {
      * @param oldLevel
      */
     public void performLevelUp(JobsPlayer jPlayer, Job job, int oldLevel) {
-
-	Player player = jPlayer.getPlayer();
 	JobProgression prog = jPlayer.getJobProgression(job);
 	if (prog == null)
 	    return;
+
+	Player player = jPlayer.getPlayer();
 
 	// when the player loses income
 	if (prog.getLevel() < oldLevel) {
@@ -604,7 +593,7 @@ public class PlayerManager {
 		} else
 		    Jobs.consoleMsg("[Jobs] Can't find sound by name: " + levelUpEvent.getTitleChangeSound().name() + ". Please update it");
 	    }
-	} catch (Throwable e) {
+	} catch (Exception e) {
 	}
 
 	if (Jobs.getGCManager().FireworkLevelupUse) {
@@ -623,9 +612,6 @@ public class PlayerManager {
 			Type type = Type.BALL;
 
 			switch (rt) {
-			case 1:
-			    type = Type.BALL;
-			    break;
 			case 2:
 			    type = Type.BALL_LARGE;
 			    break;
@@ -742,7 +728,7 @@ public class PlayerManager {
 		    } else
 			Jobs.consoleMsg("[Jobs] Can't find sound by name: " + levelUpEvent.getTitleChangeSound().name() + ". Please update it");
 		}
-	    } catch (Throwable e) {
+	    } catch (Exception e) {
 	    }
 	    // user would skill up
 	    if (Jobs.getGCManager().isBroadcastingSkillups())
@@ -877,9 +863,7 @@ public class PlayerManager {
     }
 
     public BoostMultiplier getItemBoostNBT(Player player, Job prog) {
-
-	HashMap<Job, ItemBonusCache> cj = cache == null ? new HashMap<Job, ItemBonusCache>() : cache.get(player.getUniqueId());
-
+	HashMap<Job, ItemBonusCache> cj = cache.get(player.getUniqueId());
 	if (cj == null) {
 	    cj = new HashMap<>();
 	    cache.put(player.getUniqueId(), cj);
@@ -945,7 +929,6 @@ public class PlayerManager {
 	Object itemName = Reflections.getNbt(item, JobsItemBoost);
 
 	if (itemName == null || itemName.toString().isEmpty()) {
-
 	    // Checking old boost items and converting to new format if needed
 	    if (Jobs.getReflections().hasNbt(item, JobsItemBoost)) {
 		for (Job one : Jobs.getJobs()) {
@@ -1003,8 +986,8 @@ public class PlayerManager {
 	if (player == null || prog == null)
 	    return boost;
 
-	if (Jobs.getMcMMOManager().mcMMOPresent || Jobs.getMcMMOManager().mcMMOOverHaul)
-	    boost.add(BoostOf.McMMO, new BoostMultiplier().add(Jobs.getMcMMOManager().getMultiplier(player.getPlayer())));
+	if (HookManager.getMcMMOManager().mcMMOPresent || HookManager.getMcMMOManager().mcMMOOverHaul)
+	    boost.add(BoostOf.McMMO, new BoostMultiplier().add(HookManager.getMcMMOManager().getMultiplier(player.getPlayer())));
 
 	if (ent != null && (ent instanceof Tameable)) {
 	    Tameable t = (Tameable) ent;
@@ -1015,7 +998,7 @@ public class PlayerManager {
 	    }
 	}
 
-	if (ent != null && Jobs.getMyPetManager() != null && Jobs.getMyPetManager().isMyPet(ent)) {
+	if (ent != null && HookManager.getMyPetManager() != null && HookManager.getMyPetManager().isMyPet(ent)) {
 	    Double amount = Jobs.getPermissionManager().getMaxPermission(player, "jobs.petpay");
 	    if (amount != null)
 		boost.add(BoostOf.PetPay, new BoostMultiplier().add(amount));

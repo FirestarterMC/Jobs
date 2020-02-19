@@ -28,8 +28,7 @@ public class blockinfo implements Cmd {
 
 	Player player = (Player) sender;
 	Block block = Util.getTargetBlock(player, 15);
-
-	if (block == null || CMIMaterial.isAir(block.getState().getType()))
+	if (block == null || CMIMaterial.isAir(block.getType()))
 	    return true;
 
 	String dataString = CMIMaterial.getBlockData(block) == 0 ? "" : "-" + CMIMaterial.getBlockData(block);

@@ -77,8 +77,38 @@ public class JobsPlayer {
     private int doneQuests = 0;
     private int skippedQuests = 0;
 
+    private PlayerPoints pointsData = null;
+
     public JobsPlayer(String userName) {
 	this.userName = userName;
+    }
+
+    public PlayerPoints getPointsData() {
+	if (pointsData == null)
+	    pointsData = new PlayerPoints();
+	return pointsData;
+    }
+
+    public void addPoints(Double points) {
+	getPointsData().addPoints(points);
+    }
+
+    public void takePoints(Double points) {
+	getPointsData().takePoints(points);
+    }
+
+    public void setPoints(Double points) {
+	getPointsData().setPoints(points);
+    }
+
+    public void setPoints(PlayerPoints points) {
+	getPointsData().setPoints(points.getCurrentPoints());
+	getPointsData().setTotalPoints(points.getTotalPoints());
+	getPointsData().setNewEntry(points.isNewEntry());
+    }
+    
+    public boolean havePoints(double points) {
+	return getPointsData().getCurrentPoints() >= points;
     }
 
     public ArchivedJobs getArchivedJobs() {
@@ -410,7 +440,7 @@ public class JobsPlayer {
 //	synchronized (saveLock) {
 	if (!isInJob(job)) {
 	    int level = 1;
-	    int exp = 0;
+	    double exp = 0;
 
 	    JobProgression archived = getArchivedJobProgression(job);
 	    if (archived != null) {
@@ -456,9 +486,10 @@ public class JobsPlayer {
 	return level;
     }
 
-    public int getExpAfterRejoin(JobProgression jp, int level) {
+    public double getExpAfterRejoin(JobProgression jp, int level) {
 	if (jp == null)
 	    return 1;
+
 	Integer max = jp.getMaxExperience(level);
 	Double exp = jp.getExperience();
 	if (exp > max)
@@ -473,7 +504,8 @@ public class JobsPlayer {
 	    } else
 		exp = (exp - (exp * (Jobs.getGCManager().levelLossPercentage / 100.0)));
 	}
-	return exp.intValue();
+
+	return exp.doubleValue();
     }
 
     /**

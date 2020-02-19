@@ -21,28 +21,30 @@ package com.gamingmesh.jobs.config;
 import com.gamingmesh.jobs.CMILib.CMIEnchantment;
 import com.gamingmesh.jobs.CMILib.CMIEntityType;
 import com.gamingmesh.jobs.CMILib.CMIMaterial;
+import com.gamingmesh.jobs.CMILib.ConfigReader;
 import com.gamingmesh.jobs.CMILib.VersionChecker.Version;
 import com.gamingmesh.jobs.ItemBoostManager;
 import com.gamingmesh.jobs.Jobs;
 import com.gamingmesh.jobs.container.*;
 import com.gamingmesh.jobs.resources.jfep.Parser;
 import com.gamingmesh.jobs.stuff.ChatColor;
+import com.gamingmesh.jobs.stuff.Util;
+
 import org.apache.commons.lang.StringEscapeUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 public class ConfigManager {
 
@@ -50,6 +52,166 @@ public class ConfigManager {
 
     public ConfigManager() {
 	this.jobFile = new File(Jobs.getFolder(), "jobConfig.yml");
+	updateFile();
+    }
+
+    private void updateFile() {
+	ConfigReader cfg = null;
+	try {
+	    cfg = new ConfigReader(jobFile);
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+	if (cfg == null)
+	    return;
+
+	cfg.header(Arrays.asList("Jobs configuration.", "", "Edited by roracle to include 1.13 items and item names, prepping for 1.14 as well.",
+	    "",
+	    "Stores information about each job.",
+	    "",
+	    "NOTE: When having multiple jobs, both jobs will give the income payout to the player",
+	    "even if they give the pay for one action (make the configurations with this in mind)",
+	    "and each job will get the respective experience.",
+	    "",
+	    "e.g If player has 2 jobs where job1 gives 10 income and experience for killing a player ",
+	    "and job2 gives 5 income and experience for killing a player. When the user kills a player",
+	    "they will get 15 income and job1 will gain 10 experience and job2 will gain 5 experience."));
+
+	if (!cfg.contains("Jobs")) {
+	    cfg.set("Jobs", cfg.getC().get("Jobs"));
+	}
+
+	String pt = "Jobs.exampleJob";
+	cfg.addComment(pt, "Must be one word",
+	    "This job will be ignored as this is just example of all possible actions.");
+	cfg.addComment(pt + ".fullname", "full name of the job (displayed when browsing a job, used when joining and leaving",
+	    "also can be used as a prefix for the user's name if the option is enabled.",
+	    "Shown as a prefix only when the user has 1 job.",
+	    "",
+	    "NOTE: Must be 1 word");
+	cfg.get(pt + ".fullname", "Woodcutter");
+
+	cfg.addComment(pt + ".shortname", "Shortened version of the name of the job. Used as a prefix when the user has more than 1 job.");
+	cfg.get(pt + ".shortname", "W");
+	cfg.get(pt + ".description", "Earns money felling and planting trees");
+
+	cfg.addComment(pt + ".FullDescription", "Full description of job to be shown in job browse command");
+	cfg.get(pt + ".FullDescription", Arrays.asList("&2Get money for:", "  &7Planting trees", "  &7Cutting down trees", "  &7Killing players"));
+
+	cfg.addComment(pt + ".ChatColour", "The colour of the name, for a full list of supported colours, go to the message config.");
+	cfg.get(pt + ".ChatColour", "GREEN");
+
+	cfg.addComment(pt + ".BossBarColour", "[OPTIONAL] The colour of the boss bar: GREEN, BLUE, RED, WHITE, YELLOW, PINK, PURPLE.");
+	cfg.get(pt + ".BossBarColour", "WHITE");
+
+	cfg.addComment(pt + ".chat-display", "Option to let you choose what kind of prefix this job adds to your name.", "options are: full, title, job, shortfull, shorttitle, shortjob and none");
+	cfg.get(pt + ".chat-display", "full");
+
+	cfg.addComment(pt + ".max-level", "[OPTIONAL] - the maximum level of this class");
+	cfg.get(pt + ".max-level", 10);
+
+	cfg.addComment(pt + ".vip-max-level", "[OPTIONAL] - the maximum level of this class with specific permission",
+	    "use jobs.[jobsname].vipmaxlevel, in this case it will be jobs.exampleJob.vipmaxlevel");
+	cfg.get(pt + ".vip-max-level", 20);
+
+	cfg.addComment(pt + ".slots", "[OPTIONAL] - the maximum number of users on the server that can have this job at any one time (includes offline players).");
+	cfg.get(pt + ".slots", 1);
+
+	cfg.addComment(pt + ".softIncomeLimit", "[OPTIONAL] Soft limits will allow to stop income/exp/point payment increase at some particular level but allow further general leveling.",
+	    "In example if player is level 70, he will get paid as he would be at level 50, exp gain will be as he would be at lvl 40 and point gain will be as at level 60",
+	    "This only applies after players level is higher than provided particular limit.");
+
+	cfg.get(pt + ".softIncomeLimit", 50);
+	cfg.get(pt + ".softExpLimit", 40);
+	cfg.get(pt + ".softPointsLimit", 60);
+
+	cfg.addComment(pt + ".leveling-progression-equation", "Equation used for calculating how much experience is needed to go to the next level.",
+	    "Available parameters:",
+	    "  numjobs - the number of jobs the player has",
+	    "  joblevel - the level the player has attained in the job.",
+	    " NOTE: Please take care of the brackets when modifying this equation.");
+	cfg.get(pt + ".leveling-progression-equation", "10*(joblevel)+(joblevel*joblevel*4)");
+
+	cfg.addComment(pt + ".income-progression-equation", "Equation used for calculating how much income is given per action for the job level.",
+	    "Available parameters:",
+	    "  numjobs - the number of jobs the player has",
+	    "  baseincome - the income for the action at level 1 (as set in the configuration).",
+	    "  joblevel - the level the player has attained in the job.",
+	    "NOTE: Please take care of the brackets when modifying this equation.");
+	cfg.get(pt + ".income-progression-equation", "baseincome+(baseincome*(joblevel-1)*0.01)-((baseincome+(joblevel-1)*0.01) * ((numjobs-1)*0.05))");
+
+	cfg.addComment(pt + ".points-progression-equation", "Equation used for calculating how much points is given per action for the job level.",
+	    "Available parameters:",
+	    "  numjobs - the number of jobs the player has",
+	    "  basepoints - the points for the action at level 1 (as set in the configuration).",
+	    "  joblevel - the level the player has attained in the job.",
+	    "NOTE: Please take care of the brackets when modifying this equation.");
+	cfg.get(pt + ".points-progression-equation", "basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))");
+
+	cfg.addComment(pt + ".experience-progression-equation", "Equation used for calculating how much experience is given per action for the job level.",
+	    "Available parameters:",
+	    "  numjobs - the number of jobs the player has",
+	    "  baseexperience - the experience for the action at level 1 (as set in the configuration).",
+	    "  joblevel - the level the player has attained in the job.",
+	    "NOTE: Please take care of the brackets when modifying this equation.");
+	cfg.get(pt + ".experience-progression-equation", "basepoints+(basepoints*(joblevel-1)*0.01)-((basepoints+(joblevel-1)*0.01) * ((numjobs-1)*0.05))");
+
+	cfg.addComment(pt + ".rejoinCooldown", "Defines how often in seconds player can rejoin this job. Can be bypassed with jobs.rejoinbypass");
+	cfg.get(pt + ".rejoinCooldown", 10);
+
+	cfg.addComment(pt + ".Gui", "GUI icon information when using GUI function");
+	cfg.addComment(pt + ".Gui.Item", "Name of the material");
+	cfg.get(pt + ".Gui.Item", "LOG:2");
+	cfg.addComment(pt + ".Gui.Enchantments", "Enchants of the item");
+	cfg.get(pt + ".Gui.Enchantments", Arrays.asList("DURABILITY:1"));
+
+	cfg.addComment(pt + ".maxDailyQuests", "You can use the custom player head:",
+	    "Item: player_head",
+	    "  CustomSkull: Notch",
+	    "",
+	    "Defines maximum amount of daily quests player can have from THIS job",
+	    "This will not have effect on overall quest amount player will have");
+	cfg.get(pt + ".maxDailyQuests", 3);
+
+	cfg.addComment(pt + ".Quests", "Daily quests",
+	    "Each job can have as many daily quests as you want",
+	    "Players will have access to quests from jobs he is currently working at");
+	cfg.addComment(pt + ".Quests.1", "Quest identification. Can be any ONE word or number or both of them. This doesn't have any real meaning but it can't repeat.");
+	cfg.addComment(pt + ".Quests.1.Name", "Quest name used for quests list, don't forget to enclose it with \" \"");
+	cfg.get(pt + ".Quests.1.Name", "Break Oak wood");
+	cfg.addComment(pt + ".Quests.1.Objectives", "This should be in a format as [actionType];[actionTarget];[amount]",
+	    "[actionType] can be any valid job action. Look lower for all possible action types",
+	    "[actionTarget] can be material name, block type, entity name and so on. This is defined in same way as any generic payable job action",
+	    "[amount] is how many times player should perform this action to complete quest");
+	cfg.get(pt + ".Quests.1.Objectives", "- Break;17-0;300");
+
+	cfg.addComment(pt + ".Quests.1.RewardCommands", "Command list to be performed after quest is finished.",
+	    "Use [playerName] to insert players name who finished that quest");
+	cfg.get(pt + ".Quests.1.RewardCommands", Arrays.asList("money give [playerName] 500", "msg [playerName] Completed quest!"));
+
+	cfg.addComment(pt + ".Quests.1.RewardDesc", "Quest description to be used to explain quest requirements or rewards for player");
+	cfg.get(pt + ".Quests.1.RewardDesc", Arrays.asList("Break 300 Oak wood", "Get 500 bucks for this"));
+
+	cfg.addComment(pt + ".Quests.1.RestrictedAreas", "Restricted areas where player cant progress his quest");
+	cfg.get(pt + ".Quests.1.RestrictedAreas", Arrays.asList("Arenas", "myarena"));
+
+	cfg.addComment(pt + ".Quests.1.Chance", "Defines chance in getting this quest.",
+	    "If you have set 10 quests and player can have only 2, then quests with biggest chance will be picked most likely",
+	    "This will allow to have some rare quests with legendary rewards");
+	cfg.get(pt + ".Quests.1.Chance", 40);
+
+	cfg.addComment(pt + ".Quests.1.fromLevel", "Defines from which level you want to give option to get this quest",
+	    "You can use both limitations to have limited quests for particular job level ranges");
+	cfg.get(pt + ".Quests.1.fromLevel", 3);
+
+	cfg.addComment(pt + ".Quests.1.toLevel", "Defines to which job level you want to give out this quest.",
+	    "Keep in mind that player will keep quest even if he is over level limit if he got new one while being under",
+	    "In example: player with level 2 takes quests and levels up to level 5, he still can finish this quest and after next quest reset (check general config file)",
+	    "he will no longer have option to get this quest");
+	cfg.get(pt + ".Quests.1.toLevel", 5);
+
+	cfg.save();
     }
 
     public void reload() throws IOException {
@@ -74,8 +236,8 @@ public class ConfigManager {
 	File f = jobFile;
 	InputStreamReader s = null;
 	try {
-	    s = new InputStreamReader(new FileInputStream(f), "UTF-8");
-	} catch (UnsupportedEncodingException | FileNotFoundException e1) {
+	    s = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8);
+	} catch (FileNotFoundException e1) {
 	    e1.printStackTrace();
 	}
 
@@ -97,8 +259,6 @@ public class ConfigManager {
 	conf.options().pathSeparator('/');
 	try {
 	    conf.load(s);
-	    if (s != null)
-		s.close();
 	} catch (Exception e) {
 	    Jobs.getPluginLogger().severe("==================== Jobs ====================");
 	    Jobs.getPluginLogger().severe("Unable to load jobConfig.yml!");
@@ -162,12 +322,10 @@ public class ConfigManager {
 	public void setId(int id) {
 	    this.id = id;
 	}
-
     }
 
     @SuppressWarnings("deprecation")
     public KeyValues getKeyValue(String myKey, ActionType actionType, String jobName) {
-
 	String type = null;
 	String subType = "";
 	String meta = "";
@@ -205,6 +363,7 @@ public class ConfigManager {
 	case BREW:
 	case BREAK:
 	case STRIPLOGS:
+	case COLLECT:
 	    material = CMIMaterial.get(myKey + (subType));
 
 	    if (material == null)
@@ -351,7 +510,7 @@ public class ConfigManager {
 	    CMIEnchantment enchant = CMIEnchantment.get(myKey);
 	    type = enchant == null ? myKey : enchant.toString();
 	} else if (actionType == ActionType.CUSTOMKILL || actionType == ActionType.SHEAR || actionType == ActionType.MMKILL
-		    || actionType == ActionType.COLLECT || actionType == ActionType.BAKE)
+	    || actionType == ActionType.COLLECT || actionType == ActionType.BAKE)
 	    type = myKey;
 	else if (actionType == ActionType.EXPLORE) {
 	    type = myKey;
@@ -377,7 +536,6 @@ public class ConfigManager {
 	kv.setMeta(meta);
 	kv.setSubType(subType);
 	kv.setType(type);
-
 	return kv;
     }
 
@@ -393,33 +551,31 @@ public class ConfigManager {
 	    YmlMaker jobConfig = new YmlMaker(Jobs.getInstance(), "jobConfig.yml");
 	    jobConfig.saveDefaultConfig();
 	}
-	InputStreamReader s = new InputStreamReader(new FileInputStream(f), "UTF-8");
 
-	ArrayList<Job> jobs = new ArrayList<>();
-
-	Jobs.setNoneJob(null);
+	InputStreamReader s = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8);
+	java.util.logging.Logger log = Jobs.getPluginLogger();
 
 	if (!f.exists()) {
 	    try {
 		f.createNewFile();
 	    } catch (IOException e) {
-		Jobs.getPluginLogger().severe("Unable to create jobConfig.yml! No jobs were loaded!");
+		log.severe("Unable to create jobConfig.yml! No jobs were loaded!");
 		s.close();
 		return;
 	    }
 	}
+
 	YamlConfiguration conf = new YamlConfiguration();
 	conf.options().pathSeparator('/');
 	try {
 	    conf.load(s);
-	    s.close();
 	} catch (Exception e) {
-	    Jobs.getPluginLogger().severe("==================== Jobs ====================");
-	    Jobs.getPluginLogger().severe("Unable to load jobConfig.yml!");
-	    Jobs.getPluginLogger().severe("Check your config for formatting issues!");
-	    Jobs.getPluginLogger().severe("No jobs were loaded!");
-	    Jobs.getPluginLogger().severe("Error: " + e.getMessage());
-	    Jobs.getPluginLogger().severe("==============================================");
+	    log.severe("==================== Jobs ====================");
+	    log.severe("Unable to load jobConfig.yml!");
+	    log.severe("Check your config for formatting issues!");
+	    log.severe("No jobs were loaded!");
+	    log.severe("Error: " + e.getMessage());
+	    log.severe("==============================================");
 	    return;
 	} finally {
 	    s.close();
@@ -427,15 +583,16 @@ public class ConfigManager {
 
 	ConfigurationSection jobsSection = conf.getConfigurationSection("Jobs");
 	if (jobsSection == null) {
-	    Jobs.getPluginLogger().severe("==================== Jobs ====================");
-	    Jobs.getPluginLogger().severe("Jobs section not found in jobConfig file!");
-	    Jobs.getPluginLogger().severe("Check the config for fix the issue.");
-	    Jobs.getPluginLogger().severe("==============================================");
+	    log.severe("==================== Jobs ====================");
+	    log.severe("Jobs section not found in jobConfig file!");
+	    log.severe("Check the config for fix the issue.");
+	    log.severe("==============================================");
 	    return;
 	}
 
-	for (String jobKey : jobsSection.getKeys(false)) {
+	ArrayList<Job> jobs = new ArrayList<>();
 
+	for (String jobKey : jobsSection.getKeys(false)) {
 	    // Ignoring example job
 	    if (jobKey.equalsIgnoreCase("exampleJob"))
 		continue;
@@ -448,9 +605,8 @@ public class ConfigManager {
 
 	    // Translating unicode
 	    jobFullName = StringEscapeUtils.unescapeJava(jobFullName);
-
 	    if (jobFullName == null) {
-		Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid fullname property. Skipping job!");
+		log.warning("Job " + jobKey + " has an invalid fullname property. Skipping job!");
 		continue;
 	    }
 
@@ -473,7 +629,7 @@ public class ConfigManager {
 
 	    String jobShortName = jobSection.getString("shortname", null);
 	    if (jobShortName == null) {
-		Jobs.getPluginLogger().warning("Job " + jobKey + " is missing the shortname property. Skipping job!");
+		log.warning("Job " + jobKey + " is missing the shortname property. Skipping job!");
 		continue;
 	    }
 
@@ -495,27 +651,27 @@ public class ConfigManager {
 		color = ChatColor.matchColor(jobSection.getString("ChatColour", ""));
 		if (color == null) {
 		    color = ChatColor.WHITE;
-		    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid ChatColour property. Defaulting to WHITE!");
+		    log.warning("Job " + jobKey + " has an invalid ChatColour property. Defaulting to WHITE!");
 		}
 	    }
 
-	    String bossbar = null;
+	    String bossbar = "";
 	    if (jobSection.contains("BossBarColour")) {
 		bossbar = jobSection.getString("BossBarColour", "");
-		if (bossbar == null) {
+		if (bossbar.isEmpty()) {
 		    color = ChatColor.WHITE;
-		    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid BossBarColour property.");
+		    log.warning("Job " + jobKey + " has an invalid BossBarColour property.");
 		}
 	    }
 
 	    DisplayMethod displayMethod = DisplayMethod.matchMethod(jobSection.getString("chat-display", ""));
 	    if (displayMethod == null) {
-		Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid chat-display property. Defaulting to None!");
+		log.warning("Job " + jobKey + " has an invalid chat-display property. Defaulting to None!");
 		displayMethod = DisplayMethod.NONE;
 	    }
 
 	    Parser maxExpEquation;
-	    String maxExpEquationInput = jobSection.getString("leveling-progression-equation");
+	    String maxExpEquationInput = jobKey.equalsIgnoreCase("None") ? "0" : jobSection.getString("leveling-progression-equation");
 	    try {
 		maxExpEquation = new Parser(maxExpEquationInput);
 		// test equation
@@ -523,7 +679,7 @@ public class ConfigManager {
 		maxExpEquation.setVariable("joblevel", 1);
 		maxExpEquation.getValue();
 	    } catch (Throwable e) {
-		Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid leveling-progression-equation property. Skipping job!");
+		log.warning("Job " + jobKey + " has an invalid leveling-progression-equation property. Skipping job!");
 		continue;
 	    }
 
@@ -538,13 +694,13 @@ public class ConfigManager {
 		    incomeEquation.setVariable("baseincome", 1);
 		    incomeEquation.getValue();
 		} catch (Throwable e) {
-		    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid income-progression-equation property. Skipping job!");
+		    log.warning("Job " + jobKey + " has an invalid income-progression-equation property. Skipping job!");
 		    continue;
 		}
 	    }
 
 	    Parser expEquation;
-	    String expEquationInput = jobSection.getString("experience-progression-equation");
+	    String expEquationInput = jobKey.equalsIgnoreCase("None") ? "0" : jobSection.getString("experience-progression-equation");
 	    try {
 		expEquation = new Parser(expEquationInput);
 		// test equation
@@ -553,7 +709,7 @@ public class ConfigManager {
 		expEquation.setVariable("baseexperience", 1);
 		expEquation.getValue();
 	    } catch (Throwable e) {
-		Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid experience-progression-equation property. Skipping job!");
+		log.warning("Job " + jobKey + " has an invalid experience-progression-equation property. Skipping job!");
 		continue;
 	    }
 
@@ -568,7 +724,7 @@ public class ConfigManager {
 		    pointsEquation.setVariable("basepoints", 1);
 		    pointsEquation.getValue();
 		} catch (Throwable e) {
-		    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid points-progression-equation property. Skipping job!");
+		    log.warning("Job " + jobKey + " has an invalid points-progression-equation property. Skipping job!");
 		    continue;
 		}
 	    }
@@ -602,71 +758,45 @@ public class ConfigManager {
 			if (matId != null) {
 			    material = CMIMaterial.get(matId);
 			    if (material != null) {
-				Jobs.getPluginLogger().warning("Job " + jobFullName + " is using GUI item ID: " + item + "!");
-				Jobs.getPluginLogger().warning("Please use the Material name instead: " + material.toString() + "!");
+				log.warning("Job " + jobFullName + " is using GUI item ID: " + item + "!");
+				log.warning("Please use the Material name instead: " + material.toString() + "!");
 			    }
 			}
 		    }
+
 		    if (material != null)
 			GUIitem = material.newItemStack();
+
 		    if (guiSection.contains("Enchantments")) {
-			List<String> enchants = guiSection.getStringList("Enchantments");
-			if (!enchants.isEmpty()) {
-			    for (String str4 : enchants) {
-				String[] enchantid = str4.split(":");
-				if ((GUIitem.getItemMeta() instanceof EnchantmentStorageMeta)) {
-				    EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
-				    enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(enchantid[0]), Integer.parseInt(enchantid[1]), true);
-				    GUIitem.setItemMeta(enchantMeta);
-				} else
-				    GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(enchantid[0]), Integer.parseInt(enchantid[1]));
-			    }
+			for (String str4 : guiSection.getStringList("Enchantments")) {
+			    String[] enchantid = str4.split(":");
+			    if ((GUIitem.getItemMeta() instanceof EnchantmentStorageMeta)) {
+				EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
+				enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(enchantid[0]), Integer.parseInt(enchantid[1]), true);
+				GUIitem.setItemMeta(enchantMeta);
+			    } else
+				GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(enchantid[0]), Integer.parseInt(enchantid[1]));
 			}
 		    } else if (guiSection.contains("CustomSkull")) {
-			String skullOwner = guiSection.getString("CustomSkull");
-			GUIitem = CMIMaterial.PLAYER_HEAD.newItemStack();
-			SkullMeta skullMeta = (SkullMeta) GUIitem.getItemMeta();
-			if (skullOwner.length() == 36) {
-			    try {
-				OfflinePlayer offPlayer = Bukkit.getOfflinePlayer(UUID.fromString(skullOwner));
-				skullMeta.setOwner(offPlayer.getName());
-			    } catch (IllegalArgumentException e) {
-			    }
-			} else
-			    skullMeta.setOwner(skullOwner);
-			GUIitem.setItemMeta(skullMeta);
+			GUIitem = Util.getSkull(guiSection.getString("CustomSkull"));
 		    }
 		} else if (guiSection.isInt("Id") && guiSection.isInt("Data")) {
 		    GUIitem = CMIMaterial.get(guiSection.getInt("Id"), guiSection.getInt("Data")).newItemStack();
 		    if (guiSection.contains("Enchantments")) {
-			List<String> enchants = guiSection.getStringList("Enchantments");
-			if (enchants.size() > 0) {
-			    for (String str4 : enchants) {
-				String[] id = str4.split(":");
-				if ((GUIitem.getItemMeta() instanceof EnchantmentStorageMeta)) {
-				    EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
-				    enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]), true);
-				    GUIitem.setItemMeta(enchantMeta);
-				} else
-				    GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]));
-			    }
+			for (String str4 : guiSection.getStringList("Enchantments")) {
+			    String[] id = str4.split(":");
+			    if ((GUIitem.getItemMeta() instanceof EnchantmentStorageMeta)) {
+				EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
+				enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]), true);
+				GUIitem.setItemMeta(enchantMeta);
+			    } else
+				GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]));
 			}
 		    } else if (guiSection.contains("CustomSkull")) {
-			String skullOwner = guiSection.getString("CustomSkull");
-			GUIitem = CMIMaterial.PLAYER_HEAD.newItemStack();
-			SkullMeta skullMeta = (SkullMeta) GUIitem.getItemMeta();
-			if (skullOwner.length() == 36) {
-			    try {
-				OfflinePlayer offPlayer = Bukkit.getOfflinePlayer(UUID.fromString(skullOwner));
-				skullMeta.setOwner(offPlayer.getName());
-			    } catch (IllegalArgumentException e) {
-			    }
-			} else
-			    skullMeta.setOwner(skullOwner);
-			GUIitem.setItemMeta(skullMeta);
+			GUIitem = Util.getSkull(guiSection.getString("CustomSkull"));
 		    }
 		} else
-		    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid Gui property. Please fix this if you want to use it!");
+		    log.warning("Job " + jobKey + " has an invalid Gui property. Please fix this if you want to use it!");
 	    }
 
 	    // Permissions
@@ -675,12 +805,12 @@ public class ConfigManager {
 	    if (permissionsSection != null) {
 		for (String permissionKey : permissionsSection.getKeys(false)) {
 		    ConfigurationSection permissionSection = permissionsSection.getConfigurationSection(permissionKey);
-
-		    String node = permissionKey.toLowerCase();
 		    if (permissionSection == null) {
-			Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid permission key " + permissionKey + "!");
+			log.warning("Job " + jobKey + " has an invalid permission key " + permissionKey + "!");
 			continue;
 		    }
+
+		    String node = permissionKey.toLowerCase().replace('_', '.');
 		    boolean value = permissionSection.getBoolean("value", true);
 		    int levelRequirement = permissionSection.getInt("level", 0);
 		    jobPermissions.add(new JobPermission(node, value, levelRequirement));
@@ -693,20 +823,19 @@ public class ConfigManager {
 	    if (conditionsSection != null) {
 		for (String ConditionKey : conditionsSection.getKeys(false)) {
 		    ConfigurationSection permissionSection = conditionsSection.getConfigurationSection(ConditionKey);
-
-		    String node = ConditionKey.toLowerCase();
 		    if (permissionSection == null) {
-			Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid condition key " + ConditionKey + "!");
+			log.warning("Job " + jobKey + " has an invalid condition key " + ConditionKey + "!");
 			continue;
 		    }
+
 		    if (!permissionSection.contains("requires") || !permissionSection.contains("perform")) {
-			Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid condition requirement " + ConditionKey + "!");
+			log.warning("Job " + jobKey + " has an invalid condition requirement " + ConditionKey + "!");
 			continue;
 		    }
+
 		    List<String> requires = permissionSection.getStringList("requires");
 		    List<String> perform = permissionSection.getStringList("perform");
-
-		    jobConditions.add(new JobConditions(node, requires, perform));
+		    jobConditions.add(new JobConditions(ConditionKey.toLowerCase(), requires, perform));
 		}
 	    }
 
@@ -727,19 +856,20 @@ public class ConfigManager {
 		for (String commandKey : commandsSection.getKeys(false)) {
 		    ConfigurationSection commandSection = commandsSection.getConfigurationSection(commandKey);
 
-		    String node = commandKey.toLowerCase();
 		    if (commandSection == null) {
-			Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid command key" + commandKey + "!");
+			log.warning("Job " + jobKey + " has an invalid command key" + commandKey + "!");
 			continue;
 		    }
+
 		    List<String> commands = new ArrayList<>();
 		    if (commandSection.isString("command"))
 			commands.add(commandSection.getString("command"));
 		    else if (commandSection.isList("command"))
 			commands.addAll(commandSection.getStringList("command"));
+
 		    int levelFrom = commandSection.getInt("levelFrom");
 		    int levelUntil = commandSection.getInt("levelUntil");
-		    jobCommand.add(new JobCommands(node, commands, levelFrom, levelUntil));
+		    jobCommand.add(new JobCommands(commandKey.toLowerCase(), commands, levelFrom, levelUntil));
 		}
 	    }
 
@@ -752,7 +882,7 @@ public class ConfigManager {
 
 		    String node = itemKey.toLowerCase();
 		    if (itemSection == null) {
-			Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid item key " + itemKey + "!");
+			log.warning("Job " + jobKey + " has an invalid item key " + itemKey + "!");
 			continue;
 		    }
 		    int id = itemSection.getInt("id");
@@ -806,12 +936,11 @@ public class ConfigManager {
 	    if (LimitedItemsSection != null) {
 		for (String itemKey : LimitedItemsSection.getKeys(false)) {
 		    ConfigurationSection itemSection = LimitedItemsSection.getConfigurationSection(itemKey);
-
-		    String node = itemKey.toLowerCase();
 		    if (itemSection == null) {
-			Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid item key " + itemKey + "!");
+			log.warning("Job " + jobKey + " has an invalid item key " + itemKey + "!");
 			continue;
 		    }
+
 		    int id = itemSection.getInt("id");
 
 		    String name = null;
@@ -825,9 +954,8 @@ public class ConfigManager {
 			}
 
 		    HashMap<Enchantment, Integer> enchants = new HashMap<>();
-		    if (itemSection.contains("enchants") && !itemSection.getStringList("enchants").isEmpty())
+		    if (itemSection.contains("enchants"))
 			for (String eachLine : itemSection.getStringList("enchants")) {
-
 			    if (!eachLine.contains("="))
 				continue;
 
@@ -844,8 +972,8 @@ public class ConfigManager {
 			}
 
 		    int level = itemSection.getInt("level");
-
-		    jobLimitedItems.put(node.toLowerCase(), new JobLimitedItems(node, id, 0, 1, name, lore, enchants, level));
+		    String node = itemKey.toLowerCase();
+		    jobLimitedItems.put(node, new JobLimitedItems(node, id, 0, 1, name, lore, enchants, level));
 		}
 	    }
 
@@ -863,17 +991,17 @@ public class ConfigManager {
 
 		for (String one : qsection.getKeys(false)) {
 		    try {
-
 			ConfigurationSection sqsection = qsection.getConfigurationSection(one);
+			if (sqsection == null) {
+			    continue;
+			}
 
 			String name = sqsection.getString("Name", one);
 			Quest quest = new Quest(name, job);
 
-			KeyValues kv = null;
 			if (sqsection.isString("Target")) {
 			    ActionType actionType = ActionType.getByName(sqsection.getString("Action"));
-			    kv = getKeyValue(sqsection.getString("Target"), actionType, jobFullName);
-
+			    KeyValues kv = getKeyValue(sqsection.getString("Target"), actionType, jobFullName);
 			    if (kv != null) {
 				int amount = sqsection.getInt("Amount", 1);
 				QuestObjective objective = new QuestObjective(actionType, kv.getId(), kv.getMeta(), kv.getType() + kv.getSubType(), amount);
@@ -886,23 +1014,41 @@ public class ConfigManager {
 			    for (String oneObjective : list) {
 				String[] split = oneObjective.split(";");
 				if (split.length < 2) {
-				    Jobs.getPluginLogger().warning("Job " + jobKey + " has incorrect quest objective (" + oneObjective + ")!");
+				    log.warning("Job " + jobKey + " has incorrect quest objective (" + oneObjective + ")!");
 				    continue;
 				}
+
 				try {
 				    ActionType actionType = ActionType.getByName(split[0]);
-				    kv = getKeyValue(split[1], actionType, jobFullName);
-				    if (kv != null) {
-					int amount = 1;
-					if (split.length == 3) {
-					    amount = Integer.parseInt(split[2]);
-					}
+				    String mats = split[1];
+				    String[] co = mats.split(",");
 
-					QuestObjective objective = new QuestObjective(actionType, kv.getId(), kv.getMeta(), kv.getType() + kv.getSubType(), amount);
-					quest.addObjective(objective);
+				    int amount = 1;
+				    if (split.length == 3) {
+					amount = Integer.parseInt(split[2]);
+				    }
+
+				    if (co.length > 0) {
+					for (String c : co) {
+					    KeyValues kv = getKeyValue(c, actionType, jobFullName);
+					    if (kv == null) {
+						continue;
+					    }
+
+					    QuestObjective objective = new QuestObjective(actionType, kv.getId(), kv.getMeta(),
+						kv.getType() + kv.getSubType(), amount);
+					    quest.addObjective(objective);
+					}
+				    } else {
+					KeyValues kv = getKeyValue(mats, actionType, jobFullName);
+					if (kv != null) {
+					    QuestObjective objective = new QuestObjective(actionType, kv.getId(), kv.getMeta(),
+						kv.getType() + kv.getSubType(), amount);
+					    quest.addObjective(objective);
+					}
 				    }
 				} catch (Exception | Error e) {
-				    Jobs.getPluginLogger().warning("Job " + jobKey + " has incorrect quest objective (" + oneObjective + ")!");
+				    log.warning("Job " + jobKey + " has incorrect quest objective (" + oneObjective + ")!");
 				}
 			    }
 			}
@@ -925,7 +1071,6 @@ public class ConfigManager {
 			quest.setDescription(desc);
 			quest.setRestrictedArea(areas);
 			quests.add(quest);
-
 		    } catch (Throwable e) {
 			Jobs.consoleMsg("&c[Jobs] Can't load " + one + " quest for " + jobFullName);
 			e.printStackTrace();
@@ -991,6 +1136,7 @@ public class ConfigManager {
 			case BREW:
 			case BREAK:
 			case STRIPLOGS:
+			case COLLECT:
 			    material = CMIMaterial.get(myKey + (subType));
 
 			    if (material == CMIMaterial.NONE)
@@ -1006,16 +1152,27 @@ public class ConfigManager {
 				if (matId != null) {
 				    material = CMIMaterial.get(matId);
 				    if (material != null) {
-					Jobs.getPluginLogger().warning("Job " + jobKey + " " + actionType.getName() + " is using ID: " + key + "!");
-					Jobs.getPluginLogger().warning("Please use the Material name instead: " + material.toString() + "!");
+					log.warning("Job " + jobKey + " " + actionType.getName() + " is using ID: " + key + "!");
+					log.warning("Please use the Material name instead: " + material.toString() + "!");
 				    }
 				}
 			    }
+
 			    break;
 			default:
 			    break;
-
 			}
+
+			if (actionType == ActionType.STRIPLOGS && Version.isCurrentLower(Version.v1_13_R1))
+			    continue;
+
+			if (material != null && material.getMaterial() != null && material.getMaterial() == Material.AIR) {
+			    log.warning("Job " + jobKey + " " + actionType.getName() + " cant recognize material! (" + key + ")");
+			    continue;
+			}
+
+			if (material != null && Version.isCurrentLower(Version.v1_13_R1) && meta.isEmpty())
+			    meta = String.valueOf(material.getData());
 
 			c: if (material != null && material != CMIMaterial.NONE && material.getMaterial() != null) {
 
@@ -1043,7 +1200,7 @@ public class ConfigManager {
 			    // Break and Place actions MUST be blocks
 			    if (actionType == ActionType.BREAK || actionType == ActionType.PLACE || actionType == ActionType.STRIPLOGS) {
 				if (!material.isBlock()) {
-				    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + material
+				    log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + material
 					+ " (" + key + ")! Material must be a block! Use \"/jobs blockinfo\" on a target block");
 				    continue;
 				}
@@ -1060,14 +1217,14 @@ public class ConfigManager {
 			     * configurations broken.
 			     */
 			    if (material == CMIMaterial.REDSTONE_ORE && actionType == ActionType.BREAK && Version.isCurrentLower(Version.v1_13_R1)) {
-				Jobs.getPluginLogger().warning("Job " + jobKey + " is using REDSTONE_ORE instead of GLOWING_REDSTONE_ORE.");
-				Jobs.getPluginLogger().warning("Automatically changing block to GLOWING_REDSTONE_ORE. Please update your configuration.");
-				Jobs.getPluginLogger().warning("In vanilla minecraft, REDSTONE_ORE changes to GLOWING_REDSTONE_ORE when interacted with.");
-				Jobs.getPluginLogger().warning("In the future, Jobs using REDSTONE_ORE instead of GLOWING_REDSTONE_ORE may fail to work correctly.");
+				log.warning("Job " + jobKey + " is using REDSTONE_ORE instead of GLOWING_REDSTONE_ORE.");
+				log.warning("Automatically changing block to GLOWING_REDSTONE_ORE. Please update your configuration.");
+				log.warning("In vanilla minecraft, REDSTONE_ORE changes to GLOWING_REDSTONE_ORE when interacted with.");
+				log.warning("In the future, Jobs using REDSTONE_ORE instead of GLOWING_REDSTONE_ORE may fail to work correctly.");
 				material = CMIMaterial.LEGACY_GLOWING_REDSTONE_ORE;
 			    } else if (material == CMIMaterial.LEGACY_GLOWING_REDSTONE_ORE && actionType == ActionType.BREAK && Version.isCurrentEqualOrHigher(Version.v1_13_R1)) {
-				Jobs.getPluginLogger().warning("Job " + job.getName() + " is using GLOWING_REDSTONE_ORE instead of REDSTONE_ORE.");
-				Jobs.getPluginLogger().warning("Automatically changing block to REDSTONE_ORE. Please update your configuration.");
+				log.warning("Job " + job.getName() + " is using GLOWING_REDSTONE_ORE instead of REDSTONE_ORE.");
+				log.warning("Automatically changing block to REDSTONE_ORE. Please update your configuration.");
 				material = CMIMaterial.REDSTONE_ORE;
 			    }
 			    // END HACK
@@ -1134,12 +1291,13 @@ public class ConfigManager {
 			} else if (actionType == ActionType.ENCHANT) {
 			    CMIEnchantment enchant = CMIEnchantment.get(myKey);
 			    if (enchant == null && material == CMIMaterial.NONE) {
-				Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
+				log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
 				continue;
 			    }
+
 			    type = enchant == null ? myKey : enchant.toString();
 			} else if (actionType == ActionType.CUSTOMKILL || actionType == ActionType.COLLECT || actionType == ActionType.MMKILL
-				    || actionType == ActionType.SHEAR || actionType == ActionType.BAKE)
+			    || actionType == ActionType.SHEAR || actionType == ActionType.BAKE)
 			    type = myKey;
 			else if (actionType == ActionType.EXPLORE) {
 			    type = myKey;
@@ -1147,16 +1305,17 @@ public class ConfigManager {
 			    try {
 				amount = Integer.valueOf(myKey);
 			    } catch (NumberFormatException e) {
-				Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
+				log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
 				continue;
 			    }
+
 			    Jobs.getExplore().setExploreEnabled();
-			    Jobs.getExplore().setPlayerAmount(amount + 1);
+			    Jobs.getExplore().setPlayerAmount(amount);
 			} else if (actionType == ActionType.CRAFT && myKey.startsWith("!"))
 			    type = myKey.substring(1, myKey.length());
 
 			if (type == null) {
-			    Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
+			    log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
 			    continue;
 			}
 
@@ -1179,7 +1338,7 @@ public class ConfigManager {
 			if (section.isInt("until-level")) {
 			    untilLevel = section.getInt("until-level");
 			    if (untilLevel < fromlevel) {
-				Jobs.getPluginLogger().warning("Job " + jobKey + " has an invalid until-level in " + actionType.getName() + " for type property: " + key
+				log.warning("Job " + jobKey + " has an invalid until-level in " + actionType.getName() + " for type property: " + key
 				    + "! It will be not set.");
 				untilLevel = -1;
 			    }
@@ -1206,11 +1365,11 @@ public class ConfigManager {
 		Jobs.setNoneJob(job);
 	    else
 		jobs.add(job);
-
-	    Jobs.setJobs(jobs);
 	}
 
-	Jobs.consoleMsg("&e[Jobs] Loaded " + Jobs.getJobs().size() + " jobs!");
+	Jobs.setJobs(jobs);
+
+	Jobs.consoleMsg("&e[Jobs] Loaded " + jobs.size() + " jobs!");
 	if (!Jobs.getExplore().isExploreEnabled())
 	    Jobs.consoleMsg("&6[Jobs] Explorer jobs manager are not enabled!");
 	else

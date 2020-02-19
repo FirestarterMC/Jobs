@@ -29,7 +29,6 @@ public class LanguageManager {
      * loads from Jobs/locale/messages_en.yml
      */
     synchronized void load() {
-
 	// This should be present to copy over default locale files into locale folder if file doesn't exist. Grabs all files from plugin file.
 	languages = new ArrayList<>();
 	try {
@@ -92,7 +91,7 @@ public class LanguageManager {
 	    c.get("general.admin.success", "&eYour command has been performed.");
 	    c.get("general.error.noHelpPage", "&cThere is no help page by this number!");
 	    c.get("general.error.notNumber", "&ePlease use numbers!");
-	    c.get("general.error.job", "&cThe job you selected does not exist!");
+	    c.get("general.error.job", "&cThe job you selected does not exist or you not joined to this!");
 	    c.get("general.error.noCommand", "&cThere is no command by this name!");
 	    c.get("general.error.permission", "&cYou do not have permission to do that!");
 	    c.get("general.error.noinfo", "&cNo information found!");
@@ -172,15 +171,15 @@ public class LanguageManager {
 	    c.get("command.bonus.help.args", "[jobname]");
 	    Jobs.getGCManager().getCommandArgs().put("bonus", Arrays.asList("[jobname]"));
 	    c.get("command.bonus.output.topline", "&7**************** &2[money] &6[points] &e[exp] &7****************");
-	    c.get("command.bonus.output.permission", " &ePerm bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.item", " &eItem bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.global", " &eGlobal bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.dynamic", " &eDynamic bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.nearspawner", " &eSpawner bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.petpay", " &ePetPay bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.area", " &eArea bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.mcmmo", " &eMcMMO bonus: %money% %points% %exp%");
-	    c.get("command.bonus.output.final", " &eFinal bonus: %money% %points% %exp%");
+	    c.get("command.bonus.output.permission", " &ePerm bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.item", " &eItem bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.global", " &eGlobal bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.dynamic", " &eDynamic bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.nearspawner", " &eSpawner bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.petpay", " &ePetPay bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.area", " &eArea bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.mcmmo", " &eMcMMO bonus: &2%money% &6%points% &e%exp%");
+	    c.get("command.bonus.output.final", " &eFinal bonus: &2%money% &6%points% &e%exp%");
 	    c.get("command.bonus.output.finalExplanation", " &eDoes not include Petpay and Near spawner bonus/penalty");
 
 	    c.get("command.convert.help.info",
@@ -301,6 +300,9 @@ public class LanguageManager {
 	    c.get("command.shop.info.reqJobs", "&eRequired jobs:");
 	    c.get("command.shop.info.reqJobsList", "  &6%jobsname%&e: &e%level% lvl");
 	    c.get("command.shop.info.reqTotalLevel", "&6Required total level: &e%totalLevel%");
+	    c.get("command.shop.info.reqJobsColor", "&4");
+	    c.get("command.shop.info.reqJobsLevelColor", "&4");
+	    c.get("command.shop.info.reqTotalLevelColor", "&4");
 	    c.get("command.shop.info.cantOpen", "&cCan't open this page");
 	    c.get("command.shop.info.NoPermForItem", "&cYou don't have required permissions for this item!");
 	    c.get("command.shop.info.NoPermToBuy", "&cNo permissions to buy this item");
@@ -347,6 +349,7 @@ public class LanguageManager {
 	    c.get("command.info.gui.rightClick", "&eRight Click to join job");
 	    c.get("command.info.gui.leftSlots", "&eLeft slots:&f ");
 	    c.get("command.info.gui.working", "&2&nAlready working");
+	    c.get("command.info.gui.cantJoin", "&cYou can't join to the selected job.");
 	    c.get("command.info.gui.max", "&eMax level:&f ");
 	    c.get("command.info.gui.back", "&e<<< Back");
 
@@ -425,6 +428,7 @@ public class LanguageManager {
 
 	    c.get("command.explored.help.info", "Check who visited this chunk");
 	    c.get("command.explored.error.noexplore", "No one visited this chunk");
+	    c.get("command.explored.fullExplore", "&aThis chunk is fully explored");
 	    c.get("command.explored.list", "&e%place%. %playername%");
 
 	    c.get("command.browse.help.info", "List the jobs available to you.");
@@ -539,6 +543,7 @@ public class LanguageManager {
 	    c.get("command.log.output.money", "&6money: %amount% ");
 	    c.get("command.log.output.exp", "&eexp: %amount% ");
 	    c.get("command.log.output.points", "&6points: %amount%");
+	    c.get("command.log.output.totalIncomes", "    &6Total money:&2 %money%&6, Total exp:&2 %exp%&6, Total points:&2 %points%");
 	    c.get("command.log.output.bottomline", "&7***********************************************************");
 	    c.get("command.log.output.prev", "&e<<<<< Prev page &2|");
 	    c.get("command.log.output.next", "&2|&e Next Page >>>>");
@@ -551,6 +556,7 @@ public class LanguageManager {
 	    c.get("command.glog.output.money", "&6money: %amount% ");
 	    c.get("command.glog.output.exp", "&eexp: %amount% ");
 	    c.get("command.glog.output.points", "&6points: %amount%");
+	    c.get("command.glog.output.totalIncomes", "    &6Total money:&2 %money%&6, Total exp:&2 %exp%&6, Total points:&2 %points%");
 	    c.get("command.glog.output.bottomline", "&7**************************************************************");
 	    c.get("command.glog.output.nodata", "&cData not found");
 

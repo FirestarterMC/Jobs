@@ -44,7 +44,10 @@ public class Language {
      * Reloads the config
      */
     public void reload() {
-	customlocale = new YmlMaker(plugin, "locale/messages_" + Jobs.getGCManager().localeString + ".yml").getConfig();
+	String ls = Jobs.getGCManager().localeString.toLowerCase();
+	if (!ls.equals("en")) {
+	    customlocale = new YmlMaker(plugin, "locale/messages_" + ls + ".yml").getConfig();
+	}
 	enlocale = new YmlMaker(plugin, "locale/messages_en.yml").getConfig();
 	if (customlocale == null)
 	    customlocale = enlocale;
@@ -97,7 +100,7 @@ public class Language {
 	    }
 	}
 
-	if (variables.length > 0)
+	if (variables != null && variables.length > 0)
 	    for (int i = 0; i < variables.length; i++) {
 		if (variables.length >= i + 2)
 		    msg = msg.replace(String.valueOf(variables[i]), String.valueOf(variables[i + 1]));
@@ -164,7 +167,7 @@ public class Language {
      * @return the message
      */
     public String getDefaultMessage(String key) {
-	return enlocale.contains(key) == true ? Colors(enlocale.getString(key)) : "Can't find locale";
+	return enlocale.contains(key) ? Colors(enlocale.getString(key)) : "Can't find locale";
     }
 
     /**

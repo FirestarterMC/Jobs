@@ -29,7 +29,7 @@ import com.gamingmesh.jobs.container.JobsPlayer;
 
 public class GuiManager {
 
-    public void openJobsBrowseGUI(Player player) {
+    public void openJobsBrowseGUI(final Player player) {
 	ArrayList<Job> JobsList = new ArrayList<>();
 	for (Job job : Jobs.getJobs()) {
 	    if (Jobs.getGCManager().getHideJobsWithoutPermission())
@@ -37,8 +37,6 @@ public class GuiManager {
 		    continue;
 	    JobsList.add(job);
 	}
-
-	JobsPlayer JPlayer = Jobs.getPlayerManager().getJobsPlayer(player);
 
 	CMIGui gui = new CMIGui(player);
 	gui.setTitle(Jobs.getLanguage().getMessage("command.info.gui.pickjob"));
@@ -56,6 +54,8 @@ public class GuiManager {
 	GuiSize = GuiSize > 54 ? 54 : GuiSize;
 
 	gui.setInvSize(GuiSize);
+
+	JobsPlayer JPlayer = Jobs.getPlayerManager().getJobsPlayer(player);
 
 	int i = 0;
 	int pos = Jobs.getGCManager().getJobsGUIStartPosition() - 1;
@@ -141,7 +141,11 @@ public class GuiManager {
 		    case Left:
 		    case LeftShift:
 			if (Jobs.getGCManager().JobsGUISwitcheButtons) {
-			    Jobs.getCommandManager().onCommand(player, null, "jobs", new String[] { "join", job.getName() });
+			    if (!Jobs.getGCManager().DisableJoiningJobThroughGui) {
+				Jobs.getCommandManager().onCommand(player, null, "jobs", new String[] { "join", job.getName() });
+			    } else {
+				player.sendMessage(Jobs.getLanguage().getMessage("command.info.gui.cantJoin"));
+			    }
 			    openJobsBrowseGUI(player);
 			} else {
 			    openJobsBrowseGUI(player, job);
@@ -156,7 +160,11 @@ public class GuiManager {
 			if (Jobs.getGCManager().JobsGUISwitcheButtons) {
 			    openJobsBrowseGUI(player, job);
 			} else {
-			    Jobs.getCommandManager().onCommand(player, null, "jobs", new String[] { "join", job.getName() });
+			    if (!Jobs.getGCManager().DisableJoiningJobThroughGui) {
+				Jobs.getCommandManager().onCommand(player, null, "jobs", new String[] { "join", job.getName() });
+			    } else {
+				player.sendMessage(Jobs.getLanguage().getMessage("command.info.gui.cantJoin"));
+			    }
 			    openJobsBrowseGUI(player);
 			}
 			break;
@@ -188,8 +196,11 @@ public class GuiManager {
 
 	int i = 0;
 	for (ActionType actionType : ActionType.values()) {
-	    List<JobInfo> info = job.getJobInfo(actionType);
+	    if (i > tempInv.getMaxStackSize()) {
+		break;
+	    }
 
+	    List<JobInfo> info = job.getJobInfo(actionType);
 	    if (info == null || info.isEmpty())
 		continue;
 
@@ -268,7 +279,8 @@ public class GuiManager {
 		items.add(one);
 	}
 
-	int GuiSize = GUIManager.isOpenedGui(player) && GUIManager.getGui(player) != null ? GUIManager.getGui(player).getInvSize().getFields() : Jobs.getGCManager().getJobsGUIRows() * 9;
+	int GuiSize = GUIManager.isOpenedGui(player) && GUIManager.getGui(player) != null ?
+	    GUIManager.getGui(player).getInvSize().getFields() : Jobs.getGCManager().getJobsGUIRows() * 9;
 	int backButton = Jobs.getGCManager().getJobsGUIBackButton();
 
 	CMIGui gui = new CMIGui(player);
