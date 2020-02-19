@@ -6,8 +6,10 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -125,8 +127,10 @@ public class GuiManager {
 	    ItemStack GuiItem = job.getGuiItem();
 
 	    ItemMeta meta = GuiItem.getItemMeta();
-	    meta.setDisplayName(job.getChatColor() + job.getName());
+	    meta.setDisplayName(ChatColor.WHITE + ChatColor.BOLD.toString() + job.getName());
 	    meta.setLore(Lore);
+		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+	    meta.addEnchant(Enchantment.MENDING, 1, true);
 	    GuiItem.setItemMeta(meta);
 
 	    gui.addButton(new CMIGuiButton(pos, GuiItem) {
@@ -238,7 +242,7 @@ public class GuiManager {
 			continue;
 
 		    ItemMeta meta = GuiItem.getItemMeta();
-		    meta.setDisplayName(job.getChatColor() + job.getName());
+		    meta.setDisplayName(ChatColor.WHITE + ChatColor.BOLD.toString() + job.getName());
 		    meta.setLore(Lore);
 		    GuiItem.setItemMeta(meta);
 		    tempInv.setItem(i, GuiItem.clone());
@@ -251,7 +255,7 @@ public class GuiManager {
 		y++;
 	    }
 	    ItemMeta meta = GuiItem.getItemMeta();
-	    meta.setDisplayName(job.getChatColor() + job.getName());
+	    meta.setDisplayName(ChatColor.WHITE + ChatColor.BOLD.toString() + job.getName());
 	    meta.setLore(Lore);
 	    GuiItem.setItemMeta(meta);
 	    tempInv.setItem(i, GuiItem.clone());
@@ -270,7 +274,7 @@ public class GuiManager {
 	CMIGui gui = new CMIGui(player);
 	gui.setTitle(Jobs.getLanguage().getMessage("command.info.gui.jobinfo", "[jobname]", job.getName()));
 	gui.setFiller(CMIMaterial.get(Jobs.getGCManager().guiFiller));
-	gui.setInvSize(GuiSize);
+	gui.setInvSize(GuiSize + 9); // Firestarter - Increase GUI capacity
 
 	for (int i1 = 0; i1 < items.size(); i1++) {
 	    gui.addButton(new CMIGuiButton(i1, items.get(i1)));

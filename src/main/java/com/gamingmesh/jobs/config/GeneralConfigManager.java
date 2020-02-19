@@ -1078,8 +1078,8 @@ public class GeneralConfigManager {
     public int getJobsGUIBackButton() {
 	if (JobsGUIBackButton < 1)
 	    JobsGUIBackButton = 1;
-	if (JobsGUIBackButton > JobsGUIRows * 9)
-	    JobsGUIBackButton = JobsGUIRows * 9;
+	/*if (JobsGUIBackButton > JobsGUIRows * 9)
+	    JobsGUIBackButton = JobsGUIRows * 9;*/
 	return JobsGUIBackButton - 1;
     }
 
