@@ -370,7 +370,8 @@ public class Jobs extends JavaPlugin {
      */
     public CMIScoreboardManager getCMIScoreboardManager() {
 	if (CMIScoreboardManager == null)
-	    CMIScoreboardManager = new CMIScoreboardManager(this);
+	    CMIScoreboardManager = new CMIScoreboardManager();
+
 	return CMIScoreboardManager;
     }
 
@@ -386,7 +387,7 @@ public class Jobs extends JavaPlugin {
      */
     public static SignUtil getSignUtil() {
 	if (signManager == null) {
-	    signManager = new SignUtil(getInstance());
+	    signManager = new SignUtil();
 	}
 
 	return signManager;

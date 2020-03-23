@@ -91,20 +91,25 @@ public class JobsPlayer {
 
     public void addPoints(Double points) {
 	getPointsData().addPoints(points);
+	Jobs.getJobsDAO().savePoints(this);
     }
 
     public void takePoints(Double points) {
 	getPointsData().takePoints(points);
+	Jobs.getJobsDAO().savePoints(this);
     }
 
     public void setPoints(Double points) {
 	getPointsData().setPoints(points);
+	Jobs.getJobsDAO().savePoints(this);
     }
 
     public void setPoints(PlayerPoints points) {
 	getPointsData().setPoints(points.getCurrentPoints());
 	getPointsData().setTotalPoints(points.getTotalPoints());
 	getPointsData().setNewEntry(points.isNewEntry());
+
+	Jobs.getJobsDAO().savePoints(this);
     }
     
     public boolean havePoints(double points) {
@@ -1157,7 +1162,7 @@ public class JobsPlayer {
 
     private Integer questSignUpdateShed = null;
 
-    public void addDoneQuest() {
+    public void addDoneQuest(final Job job) {
 	this.doneQuests++;
 	this.setSaved(false);
 
@@ -1165,7 +1170,7 @@ public class JobsPlayer {
 	    questSignUpdateShed = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(Jobs.getInstance(), new Runnable() {
 		@Override
 		public void run() {
-		    Jobs.getSignUtil().SignUpdate(SignTopType.questtoplist);
+		    Jobs.getSignUtil().SignUpdate(job, SignTopType.questtoplist);
 		    questSignUpdateShed = null;
 		}
 	    }, Jobs.getGCManager().getSavePeriod() * 60 * 20L);

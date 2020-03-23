@@ -136,16 +136,13 @@ public class JobsListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onSelection(PlayerInteractEvent event) {
-	Player player = event.getPlayer();
-	if (player == null)
-	    return;
-
 	if (event.getClickedBlock() == null)
 	    return;
 
 	if (event.getAction() != Action.LEFT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_BLOCK)
 	    return;
 
+	Player player = event.getPlayer();
 	ItemStack iih = Jobs.getNms().getItemInMainHand(player);
 	if (iih == null || iih.getType() == Material.AIR)
 	    return;
@@ -246,16 +243,10 @@ public class JobsListener implements Listener {
 	    return;
 
 	Block block = event.getClickedBlock();
-	if (block == null)
-	    return;
-
-	if (!(block.getState() instanceof Sign))
+	if (block == null || !(block.getState() instanceof Sign))
 	    return;
 
 	Player player = event.getPlayer();
-	if (player == null)
-	    return;
-
 	if (!isInteractOk(player))
 	    return;
 
@@ -285,16 +276,10 @@ public class JobsListener implements Listener {
 	    return;
 
 	Block block = event.getBlock();
-	if (block == null)
-	    return;
-
 	if (!(block.getState() instanceof Sign))
 	    return;
 
 	Player player = event.getPlayer();
-	if (player == null)
-	    return;
-
 	Sign sign = (Sign) block.getState();
 	String FirstLine = sign.getLine(0);
 	if (FirstLine.contains(Jobs.getLanguage().getMessage("signs.topline"))) {
@@ -328,7 +313,7 @@ public class JobsListener implements Listener {
 	    return;
 
 	Block block = event.getBlock();
-	if (block == null || !(block.getState() instanceof Sign))
+	if (!(block.getState() instanceof Sign))
 	    return;
 
 	Sign sign = (Sign) block.getState();
@@ -342,10 +327,6 @@ public class JobsListener implements Listener {
 	    return;
 
 	Player player = event.getPlayer();
-
-	if (player == null)
-	    return;
-
 	if (!player.hasPermission("jobs.command.signs")) {
 	    event.setCancelled(true);
 	    player.sendMessage(Jobs.getLanguage().getMessage("signs.cantcreate"));
@@ -353,22 +334,20 @@ public class JobsListener implements Listener {
 	}
 
 	String jobname = ChatColor.stripColor(event.getLine(2)).toLowerCase();
-
 	final Job job = Jobs.getJob(jobname);
-
-	if (type == SignTopType.toplist && job == null) {
+	if ((type == SignTopType.toplist || type == SignTopType.questtoplist) && job == null) {
 	    player.sendMessage(Jobs.getLanguage().getMessage("command.top.error.nojob"));
 	    return;
 	}
 
 	boolean special = false;
-	int Number = 0;
 	String numberString = ChatColor.stripColor(event.getLine(3)).toLowerCase();
 	if (numberString.contains("s")) {
 	    numberString = numberString.replace("s", "");
 	    special = true;
 	}
 
+	int Number = 0;
 	try {
 	    Number = Integer.parseInt(numberString);
 	} catch (NumberFormatException e) {
@@ -381,26 +360,19 @@ public class JobsListener implements Listener {
 	Location loc = sign.getLocation();
 	signInfo.setLoc(loc);
 	signInfo.setNumber(Number);
-
 	if (job != null)
 	    signInfo.setJobName(job.getName());
 	signInfo.setType(type);
-
 	signInfo.setSpecial(special);
 
 	final SignUtil signUtil = Jobs.getSignUtil();
-
 	signUtil.addSign(signInfo);
 	signUtil.saveSigns();
+
 	event.setCancelled(true);
 
-	Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-	    @Override
-	    public void run() {
-		signUtil.SignUpdate(job, type);
-		return;
-	    }
-	}, 1L);
+	Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () ->
+	    signUtil.SignUpdate(job, type), 1L);
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -520,23 +492,16 @@ public class JobsListener implements Listener {
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onCropGrown(final BlockGrowEvent event) {
 	//disabling plugin in world
-	if (event.getBlock() != null && !Jobs.getGCManager().canPerformActionInWorld(event.getBlock().getWorld()))
+	if (!Jobs.getGCManager().canPerformActionInWorld(event.getBlock().getWorld()))
 	    return;
-	Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-	    @Override
-	    public void run() {
-		Jobs.getBpManager().remove(event.getBlock());
-		return;
-	    }
-	}, 1L);
+
+	Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () ->
+	    Jobs.getBpManager().remove(event.getBlock()), 1L);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onLimitedItemInteract(PlayerInteractEvent event) {
 	Player player = event.getPlayer();
-	if (player == null)
-	    return;
-
 	ItemStack iih = Jobs.getNms().getItemInMainHand(player);
 	if (iih == null || iih.getType() == Material.AIR)
 	    return;
@@ -619,7 +584,8 @@ public class JobsListener implements Listener {
     public void onChunkChangeMove(PlayerMoveEvent event) {
 	if (event.isCancelled())
 	    return;
-	if (event.getPlayer() == null || !event.getPlayer().isOnline())
+
+	if (!event.getPlayer().isOnline())
 	    return;
 
 	//disabling plugin in world
@@ -653,7 +619,7 @@ public class JobsListener implements Listener {
 	if ((slotType != SlotType.ARMOR || slotType != SlotType.QUICKBAR) && !event.getInventory().getType().equals(InventoryType.CRAFTING))
 	    return;
 
-	if (event.getWhoClicked() == null || !(event.getWhoClicked() instanceof Player))
+	if (!(event.getWhoClicked() instanceof Player))
 	    return;
 
 	Player player = (Player) event.getWhoClicked();

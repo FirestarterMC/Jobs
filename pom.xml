@@ -21,6 +21,14 @@
 			<version>1.15.2-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
+		<!-- Boss -->
+		<dependency>
+			<groupId>org.mineacademy.boss.api</groupId>
+			<artifactId>boss-api</artifactId>
+			<version>3.1.0</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/libs/BossAPI_3.1.0.jar</systemPath>
+		</dependency>
 		<!-- MyPet -->
 		<dependency>
 			<groupId>de.keyle</groupId>
@@ -65,9 +73,9 @@
 		<dependency>
 			<groupId>io.lumine.xikage.mythicmobs</groupId>
 			<artifactId>MythicMobs</artifactId>
-			<version>4.6.5</version>
+			<version>4.9.0</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/libs/MythicMobs-4.6.5.jar</systemPath>
+			<systemPath>${basedir}/libs/MythicMobs-4.9.0.jar</systemPath>
 		</dependency>
 		<!-- WorldGuard old version -->
 		<dependency>
@@ -79,7 +87,7 @@
 		<dependency>
 			<groupId>com.sk89q.worldguard</groupId>
 			<artifactId>worldguard-bukkit</artifactId>
-			<version>7.0.1-SNAPSHOT</version>
+			<version>7.0.2-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>bukkit</artifactId>
@@ -95,21 +103,6 @@
 		<dependency>
 			<groupId>com.sk89q.worldedit</groupId>
 			<artifactId>worldedit-bukkit</artifactId>
-			<version>7.1.0-SNAPSHOT</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>bukkit</artifactId>
-					<groupId>org.bukkit</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>bukkit-classloader-check</artifactId>
-					<groupId>org.sk89q.bukkit</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>com.sk89q.worldedit</groupId>
-			<artifactId>worldedit-core</artifactId>
 			<version>7.1.0-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>

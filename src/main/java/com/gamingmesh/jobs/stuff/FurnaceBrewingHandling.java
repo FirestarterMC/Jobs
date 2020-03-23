@@ -40,39 +40,35 @@ public class FurnaceBrewingHandling {
 	    if (section == null)
 		return;
 
-	    try {
-		for (String one : section.getKeys(false)) {
-		    String value = section.getString(one);
-		    List<String> ls = new ArrayList<>();
-		    if (value.contains(";"))
-			ls.addAll(Arrays.asList(value.split(";")));
-		    else
-			ls.add(value);
+	    for (String one : section.getKeys(false)) {
+		String value = section.getString(one);
+		List<String> ls = new ArrayList<>();
+		if (value.contains(";"))
+		    ls.addAll(Arrays.asList(value.split(";")));
+		else
+		    ls.add(value);
 
-		    UUID uuid = UUID.fromString(one);
-		    if (uuid == null)
+		UUID uuid = UUID.fromString(one);
+		if (uuid == null)
+		    continue;
+
+		List<blockLoc> blist = new ArrayList<>();
+		for (String oneL : ls) {
+		    blockLoc bl = new blockLoc(oneL);
+		    Block block = bl.getBlock();
+		    if (block == null)
 			continue;
 
-		    List<blockLoc> blist = new ArrayList<>();
-		    for (String oneL : ls) {
-			blockLoc bl = new blockLoc(oneL);
-			Block block = bl.getBlock();
-			if (block == null)
-			    continue;
+		    block.removeMetadata(JobsPaymentListener.furnaceOwnerMetadata, Jobs.getInstance());
+		    block.setMetadata(JobsPaymentListener.furnaceOwnerMetadata, new FixedMetadataValue(Jobs.getInstance(), one));
 
-			block.removeMetadata(JobsPaymentListener.furnaceOwnerMetadata, Jobs.getInstance());
-			block.setMetadata(JobsPaymentListener.furnaceOwnerMetadata, new FixedMetadataValue(Jobs.getInstance(), one));
-
-			blist.add(bl);
-		    }
-
-		    if (!blist.isEmpty()) {
-			furnaceMap.put(uuid, blist);
-			totalf++;
-		    }
+		    blist.add(bl);
 		}
-	    } catch (Throwable e) {
-		e.printStackTrace();
+
+		if (!blist.isEmpty()) {
+		    furnaceMap.put(uuid, blist);
+		    totalf++;
+		}
 	    }
 	}
 
@@ -81,39 +77,35 @@ public class FurnaceBrewingHandling {
 	    if (section == null)
 		return;
 
-	    try {
-		for (String one : section.getKeys(false)) {
-		    String value = section.getString(one);
-		    List<String> ls = new ArrayList<>();
-		    if (value.contains(";"))
-			ls.addAll(Arrays.asList(value.split(";")));
-		    else
-			ls.add(value);
+	    for (String one : section.getKeys(false)) {
+		String value = section.getString(one);
+		List<String> ls = new ArrayList<>();
+		if (value.contains(";"))
+		    ls.addAll(Arrays.asList(value.split(";")));
+		else
+		    ls.add(value);
 
-		    UUID uuid = UUID.fromString(one);
-		    if (uuid == null)
+		UUID uuid = UUID.fromString(one);
+		if (uuid == null)
+		    continue;
+
+		List<blockLoc> blist = new ArrayList<>();
+		for (String oneL : ls) {
+		    blockLoc bl = new blockLoc(oneL);
+		    Block block = bl.getBlock();
+		    if (block == null)
 			continue;
 
-		    List<blockLoc> blist = new ArrayList<>();
-		    for (String oneL : ls) {
-			blockLoc bl = new blockLoc(oneL);
-			Block block = bl.getBlock();
-			if (block == null)
-			    continue;
+		    block.removeMetadata(JobsPaymentListener.brewingOwnerMetadata, Jobs.getInstance());
+		    block.setMetadata(JobsPaymentListener.brewingOwnerMetadata, new FixedMetadataValue(Jobs.getInstance(), one));
 
-			block.removeMetadata(JobsPaymentListener.brewingOwnerMetadata, Jobs.getInstance());
-			block.setMetadata(JobsPaymentListener.brewingOwnerMetadata, new FixedMetadataValue(Jobs.getInstance(), one));
-
-			blist.add(bl);
-		    }
-
-		    if (!blist.isEmpty()) {
-			brewingMap.put(uuid, blist);
-			totalb++;
-		    }
+		    blist.add(bl);
 		}
-	    } catch (Throwable e) {
-		e.printStackTrace();
+
+		if (!blist.isEmpty()) {
+		    brewingMap.put(uuid, blist);
+		    totalb++;
+		}
 	    }
 	}
 
@@ -247,9 +239,7 @@ public class FurnaceBrewingHandling {
 	    return ownershipFeedback.invalid;
 
 	JobsPlayer jPlayer = Jobs.getPlayerManager().getJobsPlayer(player);
-
 	int max = jPlayer.getMaxFurnacesAllowed();
-
 	int have = jPlayer.getFurnaceCount();
 
 	boolean owner = false;
@@ -277,24 +267,25 @@ public class FurnaceBrewingHandling {
 
 	block.setMetadata(JobsPaymentListener.furnaceOwnerMetadata, new FixedMetadataValue(Jobs.getInstance(), player.getUniqueId().toString()));
 
+	if (!Jobs.getGCManager().isFurnacesReassign()) {
+	    return ownershipFeedback.newReg;
+	}
+
 	List<blockLoc> ls = furnaceMap.get(player.getUniqueId());
 	if (ls == null)
 	    ls = new ArrayList<blockLoc>();
+
 	ls.add(new blockLoc(block.getLocation()));
 	furnaceMap.put(player.getUniqueId(), ls);
-
 	return ownershipFeedback.newReg;
     }
 
     public static ownershipFeedback registerBrewingStand(Player player, Block block) {
-
 	if (!CMIMaterial.get(block).equals(CMIMaterial.BREWING_STAND) && !CMIMaterial.get(block).equals(CMIMaterial.LEGACY_BREWING_STAND))
 	    return ownershipFeedback.invalid;
 
 	JobsPlayer jPlayer = Jobs.getPlayerManager().getJobsPlayer(player);
-
 	int max = jPlayer.getMaxBrewingStandsAllowed();
-
 	int have = jPlayer.getBrewingStandCount();
 
 	boolean owner = false;
@@ -313,6 +304,7 @@ public class FurnaceBrewingHandling {
 		    return ownershipFeedback.notOwn;
 	    }
 	}
+
 	if (owner)
 	    return ownershipFeedback.old;
 
@@ -321,12 +313,16 @@ public class FurnaceBrewingHandling {
 
 	block.setMetadata(JobsPaymentListener.brewingOwnerMetadata, new FixedMetadataValue(Jobs.getInstance(), player.getUniqueId().toString()));
 
+	if (!Jobs.getGCManager().isBrewingStandsReassign()) {
+	    return ownershipFeedback.newReg;
+	}
+
 	List<blockLoc> ls = brewingMap.get(player.getUniqueId());
 	if (ls == null)
 	    ls = new ArrayList<blockLoc>();
+
 	ls.add(new blockLoc(block.getLocation()));
 	brewingMap.put(player.getUniqueId(), ls);
-
 	return ownershipFeedback.newReg;
     }
 
@@ -334,15 +330,19 @@ public class FurnaceBrewingHandling {
 	List<blockLoc> ls = furnaceMap.remove(uuid);
 	if (ls == null)
 	    return 0;
+
 	for (blockLoc one : ls) {
 	    Block block = one.getBlock();
 	    if (block == null)
 		continue;
+
 	    CMIMaterial cmat = CMIMaterial.get(block);
 	    if (!cmat.equals(CMIMaterial.FURNACE) && !cmat.equals(CMIMaterial.LEGACY_BURNING_FURNACE) && !cmat.equals(CMIMaterial.SMOKER) && !cmat.equals(CMIMaterial.BLAST_FURNACE))
 		continue;
+
 	    block.removeMetadata(JobsPaymentListener.furnaceOwnerMetadata, Jobs.getInstance());
 	}
+
 	return ls.size();
     }
 
@@ -350,15 +350,16 @@ public class FurnaceBrewingHandling {
 	List<blockLoc> ls = brewingMap.remove(uuid);
 	if (ls == null)
 	    return 0;
+
 	for (blockLoc one : ls) {
 	    Block block = one.getBlock();
 	    if (block == null)
 		continue;
 
-	    if (!CMIMaterial.get(block).equals(CMIMaterial.BREWING_STAND))
-		continue;
-	    block.removeMetadata(JobsPaymentListener.brewingOwnerMetadata, Jobs.getInstance());
+	    if (CMIMaterial.get(block).equals(CMIMaterial.BREWING_STAND))
+		block.removeMetadata(JobsPaymentListener.brewingOwnerMetadata, Jobs.getInstance());
 	}
+
 	return ls.size();
     }
 

@@ -193,11 +193,12 @@ public class ShopManager {
 		skullMeta.setDisplayName(item.getIconName());
 		skullMeta.setLore(Lore);
 
-		if (item.isHeadOwner())
-		    skullMeta.setOwner(Jobs.getPlayerManager().getJobsPlayer(player).getName());
-		else {
+		if (item.isHeadOwner()) {
+		    Jobs.getNms().setSkullOwner(skullMeta, Jobs.getPlayerManager().getJobsPlayer(player).getPlayer());
+		} else {
+		    @SuppressWarnings("deprecation")
 		    OfflinePlayer offPlayer = Bukkit.getOfflinePlayer(item.getCustomHead());
-		    skullMeta.setOwner(offPlayer.getName());
+		    Jobs.getNms().setSkullOwner(skullMeta, offPlayer);
 		}
 		GUIitem.setItemMeta(skullMeta);
 	    } else
@@ -258,6 +259,7 @@ public class ShopManager {
 		    }
 
 		    pointsInfo.takePoints(item.getPrice());
+		    Jobs.getJobsDAO().savePoints(jPlayer);
 		    player.sendMessage(Jobs.getLanguage().getMessage("command.shop.info.Paid", "%amount%", item.getPrice()));
 
 		}
@@ -315,6 +317,9 @@ public class ShopManager {
 	int y = 1;
 	for (String category : categoriesList) {
 	    ConfigurationSection NameSection = ConfCategory.getConfigurationSection(category);
+	    if (NameSection == null) {
+		    continue;
+		}
 
 	    if (!NameSection.isDouble("Price")) {
 		Jobs.getPluginLogger().severe("Shop item " + category + " has an invalid Price property. Skipping!");

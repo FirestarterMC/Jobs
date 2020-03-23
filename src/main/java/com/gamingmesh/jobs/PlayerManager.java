@@ -44,7 +44,6 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import com.gamingmesh.jobs.CMILib.ItemReflection;
 import com.gamingmesh.jobs.CMILib.Reflections;
 import com.gamingmesh.jobs.CMILib.VersionChecker.Version;
-import com.gamingmesh.jobs.Signs.SignTopType;
 import com.gamingmesh.jobs.api.JobsJoinEvent;
 import com.gamingmesh.jobs.api.JobsLeaveEvent;
 import com.gamingmesh.jobs.api.JobsLevelUpEvent;
@@ -89,6 +88,10 @@ public class PlayerManager {
     @Deprecated
     public PointsData getPointsData() {
 	return Jobs.getPointsData();
+    }
+
+    public String getMobSpawnerMetadata() {
+	return mobSpawnerMetadata;
     }
 
     public int getMapSize() {
@@ -388,9 +391,10 @@ public class PlayerManager {
 	Jobs.getJobsDAO().joinJob(jPlayer, jPlayer.getJobProgression(job));
 
 	PerformCommands.PerformCommandsOnJoin(jPlayer, job);
+
 	Jobs.takeSlot(job);
-	Jobs.getSignUtil().SignUpdate(job);
-	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	Jobs.getSignUtil().updateAllSign(job);
+
 	job.updateTotalPlayers();
     }
 
@@ -419,8 +423,7 @@ public class PlayerManager {
 	PerformCommands.PerformCommandsOnLeave(jPlayer, job);
 	Jobs.leaveSlot(job);
 
-	Jobs.getSignUtil().SignUpdate(job);
-	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	Jobs.getSignUtil().updateAllSign(job);
 	job.updateTotalPlayers();
 	return true;
     }
@@ -467,8 +470,7 @@ public class PlayerManager {
 	jPlayer.promoteJob(job, levels);
 	jPlayer.save();
 
-	Jobs.getSignUtil().SignUpdate(job);
-	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	Jobs.getSignUtil().updateAllSign(job);
     }
 
     /**
@@ -480,8 +482,8 @@ public class PlayerManager {
     public void demoteJob(JobsPlayer jPlayer, Job job, int levels) {
 	jPlayer.demoteJob(job, levels);
 	jPlayer.save();
-	Jobs.getSignUtil().SignUpdate(job);
-	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+
+	Jobs.getSignUtil().updateAllSign(job);
     }
 
     /**
@@ -497,8 +499,7 @@ public class PlayerManager {
 	int oldLevel = prog.getLevel();
 	if (prog.addExperience(experience)) {
 	    performLevelUp(jPlayer, job, oldLevel);
-	    Jobs.getSignUtil().SignUpdate(job);
-	    Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	    Jobs.getSignUtil().updateAllSign(job);
 	}
 
 	jPlayer.save();
@@ -517,8 +518,7 @@ public class PlayerManager {
 	prog.addExperience(-experience);
 
 	jPlayer.save();
-	Jobs.getSignUtil().SignUpdate(job);
-	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	Jobs.getSignUtil().updateAllSign(job);
     }
 
     /**
@@ -560,8 +560,7 @@ public class PlayerManager {
 	    jPlayer.reloadHonorific();
 	    Jobs.getPermissionHandler().recalculatePermissions(jPlayer);
 	    performCommandOnLevelUp(jPlayer, prog.getJob(), oldLevel);
-	    Jobs.getSignUtil().SignUpdate(job);
-	    Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	    Jobs.getSignUtil().updateAllSign(job);
 	    return;
 	}
 
@@ -757,8 +756,7 @@ public class PlayerManager {
 	jPlayer.reloadHonorific();
 	Jobs.getPermissionHandler().recalculatePermissions(jPlayer);
 	performCommandOnLevelUp(jPlayer, prog.getJob(), oldLevel);
-	Jobs.getSignUtil().SignUpdate(job);
-	Jobs.getSignUtil().SignUpdate(SignTopType.gtoplist);
+	Jobs.getSignUtil().updateAllSign(job);
     }
 
     /**
@@ -983,7 +981,7 @@ public class PlayerManager {
     public Boost getFinalBonus(JobsPlayer player, Job prog, Entity ent, LivingEntity victim, boolean force, boolean getall) {
 	Boost boost = new Boost();
 
-	if (player == null || prog == null)
+	if (player == null || !player.isOnline() || prog == null)
 	    return boost;
 
 	if (HookManager.getMcMMOManager().mcMMOPresent || HookManager.getMcMMOManager().mcMMOOverHaul)
@@ -1026,7 +1024,6 @@ public class PlayerManager {
 //	boost.add(BoostOf.Item, Jobs.getPlayerManager().getItemBoost(player.getPlayer(), prog));
 	boost.add(BoostOf.Item, getItemBoostNBT(player.getPlayer(), prog));
 	boost.add(BoostOf.Area, new BoostMultiplier().add(Jobs.getRestrictedAreaManager().getRestrictedMultiplier(player.getPlayer())));
-
 	return boost;
     }
 
@@ -1062,9 +1059,5 @@ public class PlayerManager {
 		return;
 	    }
 	}, Jobs.getGCManager().AutoJobJoinDelay * 20L);
-    }
-
-    public String getMobSpawnerMetadata() {
-	return mobSpawnerMetadata;
     }
 }

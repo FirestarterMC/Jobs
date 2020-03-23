@@ -117,6 +117,10 @@ public class Job {
 	this.boost.add(type, Point - 1D);
     }
 
+    public void addBoost(CurrencyType type, double point, int hour, int minute, int second) {
+	boost.add(type, point - 1D, hour, minute, second);
+    }
+
     public void setBoost(BoostMultiplier BM) {
 	this.boost = BM;
     }
@@ -442,10 +446,15 @@ public class Job {
     }
 
     public Quest getQuest(String name) {
+	if (name == null || name.trim().isEmpty()) {
+	    return null;
+	}
+
 	for (Quest one : quests) {
 	    if (one.getConfigName().equalsIgnoreCase(name))
 		return one;
 	}
+
 	return null;
     }
 

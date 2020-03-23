@@ -1160,12 +1160,9 @@ public abstract class JobsDAO {
 	}
 
 	for (Job one : Jobs.getJobs()) {
-	    if (one.getId() != 0)
-		continue;
-	    this.recordNewJobName(one);
+	    if (one.getId() == 0)
+		recordNewJobName(one);
 	}
-
-	return;
     }
 
     /**
@@ -1460,11 +1457,11 @@ public abstract class JobsDAO {
      * @throws SQLException 
      */
     public List<Convert> convertDatabase() throws SQLException {
+	List<Convert> list = new ArrayList<>();
 	JobsConnection conn = getConnection();
 	if (conn == null)
-	    return null;
+	    return list;
 
-	List<Convert> list = new ArrayList<>();
 	PreparedStatement prest = null;
 	ResultSet res = null;
 	try {
@@ -1475,6 +1472,7 @@ public abstract class JobsDAO {
 		PlayerInfo pi = Jobs.getPlayerManager().getPlayerInfo(id);
 		if (pi == null)
 		    continue;
+
 		JobsPlayer jPlayer = Jobs.getPlayerManager().getJobsPlayer(pi.getUuid());
 		if (jPlayer == null)
 		    continue;
@@ -1494,18 +1492,12 @@ public abstract class JobsDAO {
 
 		list.add(new Convert(res.getInt("id"), jPlayer.getUniqueId(), job.getId(), res.getInt(ArchiveTableFields.level.getCollumn()), res.getInt(ArchiveTableFields.experience.getCollumn())));
 	    }
-	} catch (SQLException e) {
-	    e.printStackTrace();
 	} finally {
 	    close(res);
 	    close(prest);
 	}
 
-	try {
-	    conn.closeConnection();
-	} catch (SQLException e) {
-	    e.printStackTrace();
-	}
+	conn.closeConnection();
 	return list;
     }
 
@@ -1635,11 +1627,14 @@ public abstract class JobsDAO {
      */
     public List<TopList> getGlobalTopList(int start) {
 	JobsConnection conn = getConnection();
-
 	List<TopList> names = new ArrayList<>();
-
 	if (conn == null)
 	    return names;
+
+	if (start < 0) {
+	    start = 0;
+	}
+
 	PreparedStatement prest = null;
 	ResultSet res = null;
 	try {
@@ -1653,10 +1648,10 @@ public abstract class JobsDAO {
 		PlayerInfo info = Jobs.getPlayerManager().getPlayerInfo(res.getInt(JobsTableFields.userid.getCollumn()));
 		if (info == null)
 		    continue;
-		if (info.getName() == null)
-		    continue;
+
 		TopList top = new TopList(info, res.getInt("totallvl"), 0);
 		names.add(top);
+
 		if (names.size() >= Jobs.getGCManager().JobsTopAmount)
 		    break;
 	    }
@@ -1666,6 +1661,7 @@ public abstract class JobsDAO {
 	    close(res);
 	    close(prest);
 	}
+
 	return names;
     }
 
@@ -1680,6 +1676,10 @@ public abstract class JobsDAO {
 	List<TopList> names = new ArrayList<>();
 	if (conn == null)
 	    return names;
+
+	if (start < 0) {
+	    start = 0;
+	}
 
 	PreparedStatement prest = null;
 	ResultSet res = null;
