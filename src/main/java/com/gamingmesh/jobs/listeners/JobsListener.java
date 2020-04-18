@@ -574,7 +574,7 @@ public class JobsListener implements Listener {
 		return foundEnc;
 	}
 
-    @EventHandler
+    /*@EventHandler
     public void onChunkChangeMove(PlayerMoveEvent event) {
         if (event.isCancelled())
             return;
@@ -586,14 +586,15 @@ public class JobsListener implements Listener {
         if (event.getTo() != null && !Jobs.getGCManager().canPerformActionInWorld(event.getTo().getWorld()))
             return;
 
+
+
         Chunk from = event.getFrom().getChunk();
         Chunk to = event.getTo().getChunk();
-        if (from == to)
-            return;
+        if (from == to) return;
 
         JobsChunkChangeEvent jobsChunkChangeEvent = new JobsChunkChangeEvent(event.getPlayer(), from, to);
         Bukkit.getServer().getPluginManager().callEvent(jobsChunkChangeEvent);
-    }
+    }*/
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
