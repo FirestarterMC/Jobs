@@ -130,6 +130,7 @@ public class GuiManager {
 	    meta.setDisplayName(ChatColor.WHITE + ChatColor.BOLD.toString() + job.getName());
 	    meta.setLore(Lore);
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+		meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 	    meta.addEnchant(Enchantment.MENDING, 1, true);
 	    GuiItem.setItemMeta(meta);
 
