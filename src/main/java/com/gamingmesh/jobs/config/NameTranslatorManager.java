@@ -54,15 +54,31 @@ public class NameTranslatorManager {
 
 		CMIMaterial mat = CMIMaterial.get(materialName.replace(" ", ""));
 		NameList nameLs = ListOfNames.get(mat);
-		if (nameLs == null) {
-		    return mat.getName();
+
+		if (nameLs != null) {
+		    return nameLs.getName();
+		}
+
+		if (mame != null && !mame.isEmpty()) {
+		    mat = CMIMaterial.get(materialName.replace(" ", ""));
+		    nameLs = ListOfNames.get(mat);
+
+		    if (nameLs != null) {
+			return nameLs.getName();
+		    }
 		}
 
 		if (meta != null && !meta.isEmpty()) {
 		    mat = CMIMaterial.get(materialName + ":" + meta);
 		    nameLs = ListOfNames.get(mat);
 		    if (nameLs == null) {
-			return mat.getName();
+		    	mat = CMIMaterial.get(materialName.replace(" ", ""));
+		    	nameLs = ListOfNames.get(mat);
+		    	NameList nameMeta = ListOfNames.get(CMIMaterial.get(meta.replace(" ", "")));
+		    	if (nameLs != null && nameMeta != null) {
+		    		return nameLs + ":" + nameMeta;
+			    }
+				return mat.getName();
 		    }
 		}
 
@@ -74,7 +90,7 @@ public class NameTranslatorManager {
 		    }
 		}
 
-		return nameLs.getName();
+		return mat.getName();
 	    case BREED:
 	    case KILL:
 	    case MILK:

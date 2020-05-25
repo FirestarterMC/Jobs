@@ -20,9 +20,7 @@ public class Boost {
     }
 
     public BoostMultiplier get(BoostOf boostoff) {
-	if (!map.containsKey(boostoff))
-	    return new BoostMultiplier();
-	return map.get(boostoff);
+	return map.getOrDefault(boostoff, new BoostMultiplier());
     }
 
     public double get(BoostOf boostoff, CurrencyType BT) {
@@ -47,12 +45,6 @@ public class Boost {
     public double getFinalAmount(CurrencyType BT, double income) {
 	double f = income;
 
-	for (BoostOf one : BoostOf.values()) {
-	    if (map.containsKey(one) && !map.get(one).isValid()) {
-		return f;
-	    }
-	}
-
 	if (income > 0 || income < 0 && Jobs.getGCManager().applyToNegativeIncome)
 	    f = income + ((income > 0D ? income : -income) * getFinal(BT, false, false));
 
@@ -64,17 +56,23 @@ public class Boost {
 
     public double getFinal(CurrencyType BT, boolean percent, boolean excludeExtra) {
 	double r = 0D;
+
 	for (BoostOf one : BoostOf.values()) {
 	    if (!map.containsKey(one))
 		continue;
+
 	    if (excludeExtra && (one == BoostOf.NearSpawner || one == BoostOf.PetPay))
 		continue;
+
+	    if (!map.get(one).isValid())
+		continue;
+
 	    r += map.get(one).get(BT);
 	}
+
 	if (r < -1)
 	    r = -1;
-	if (percent)
-	    return (int) (r * 100);
-	return r;
+
+	return percent ? (int) (r * 100) : r;
     }
 }

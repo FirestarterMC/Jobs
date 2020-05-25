@@ -177,46 +177,105 @@ public class ConfigManager {
 	cfg.addComment(pt + ".Quests", "Daily quests",
 	    "Each job can have as many daily quests as you want",
 	    "Players will have access to quests from jobs he is currently working at");
-	cfg.addComment(pt + ".Quests.1", "Quest identification. Can be any ONE word or number or both of them. This doesn't have any real meaning but it can't repeat.");
-	cfg.addComment(pt + ".Quests.1.Name", "Quest name used for quests list, don't forget to enclose it with \" \"");
-	cfg.get(pt + ".Quests.1.Name", "Break Oak wood");
-	cfg.addComment(pt + ".Quests.1.Objectives", "This should be in a format as [actionType];[actionTarget];[amount]",
+
+	String questPt = pt + ".Quests.first";
+	cfg.addComment(questPt, "Quest identification. Can be any ONE word or number or both of them. This doesn't have any real meaning but it can't repeat.");
+	cfg.addComment(questPt + ".Name", "Quest name used for quests list, don't forget to enclose it with \" \"");
+	cfg.get(questPt + ".Name", "Break Oak wood");
+	cfg.addComment(questPt + ".Objectives", "This should be in a format as [actionType];[actionTarget];[amount]",
 	    "[actionType] can be any valid job action. Look lower for all possible action types",
 	    "[actionTarget] can be material name, block type, entity name and so on. This is defined in same way as any generic payable job action",
 	    "[amount] is how many times player should perform this action to complete quest");
-	cfg.get(pt + ".Quests.1.Objectives", "- Break;17-0;300");
+	cfg.get(questPt + ".Objectives", "Break;17-0;300");
 
-	cfg.addComment(pt + ".Quests.1.RewardCommands", "Command list to be performed after quest is finished.",
+	cfg.addComment(questPt + ".RewardCommands", "Command list to be performed after quest is finished.",
 	    "Use [playerName] to insert players name who finished that quest");
-	cfg.get(pt + ".Quests.1.RewardCommands", Arrays.asList("money give [playerName] 500", "msg [playerName] Completed quest!"));
+	cfg.get(questPt + ".RewardCommands", Arrays.asList("money give [playerName] 500", "msg [playerName] Completed quest!"));
 
-	cfg.addComment(pt + ".Quests.1.RewardDesc", "Quest description to be used to explain quest requirements or rewards for player");
-	cfg.get(pt + ".Quests.1.RewardDesc", Arrays.asList("Break 300 Oak wood", "Get 500 bucks for this"));
+	cfg.addComment(questPt + ".RewardDesc", "Quest description to be used to explain quest requirements or rewards for player");
+	cfg.get(questPt + ".RewardDesc", Arrays.asList("Break 300 Oak wood", "Get 500 bucks for this"));
 
-	cfg.addComment(pt + ".Quests.1.RestrictedAreas", "Restricted areas where player cant progress his quest");
-	cfg.get(pt + ".Quests.1.RestrictedAreas", Arrays.asList("Arenas", "myarena"));
+	cfg.addComment(questPt + ".RestrictedAreas", "Restricted areas where player cant progress his quest");
+	cfg.get(questPt + ".RestrictedAreas", Arrays.asList("Arenas", "myarena"));
 
-	cfg.addComment(pt + ".Quests.1.Chance", "Defines chance in getting this quest.",
+	cfg.addComment(questPt + ".Chance", "Defines chance in getting this quest.",
 	    "If you have set 10 quests and player can have only 2, then quests with biggest chance will be picked most likely",
 	    "This will allow to have some rare quests with legendary rewards");
-	cfg.get(pt + ".Quests.1.Chance", 40);
+	cfg.get(questPt + ".Chance", 40);
 
-	cfg.addComment(pt + ".Quests.1.fromLevel", "Defines from which level you want to give option to get this quest",
+	cfg.addComment(questPt + ".fromLevel", "Defines from which level you want to give option to get this quest",
 	    "You can use both limitations to have limited quests for particular job level ranges");
-	cfg.get(pt + ".Quests.1.fromLevel", 3);
+	cfg.get(questPt + ".fromLevel", 3);
 
-	cfg.addComment(pt + ".Quests.1.toLevel", "Defines to which job level you want to give out this quest.",
+	cfg.addComment(questPt + ".toLevel", "Defines to which job level you want to give out this quest.",
 	    "Keep in mind that player will keep quest even if he is over level limit if he got new one while being under",
 	    "In example: player with level 2 takes quests and levels up to level 5, he still can finish this quest and after next quest reset (check general config file)",
 	    "he will no longer have option to get this quest");
-	cfg.get(pt + ".Quests.1.toLevel", 5);
+	cfg.get(questPt + ".toLevel", 5);
+
+	cfg.addComment(pt + ".Break",
+	    "########################################################################",
+	    "Section used to configure what items the job gets paid for, how much",
+	    "they get paid and how much experience they gain.",
+	    "",
+	    "For break and place, the block material name is used.",
+	    "e.g ACACIA_LOG, DARK_OAK_FENCE, BIRCH_DOOR",
+	    "",
+	    "To get a list of all available block types, check the",
+	    "bukkit JavaDocs for a complete list of block types",
+	    "https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html",
+	    "",
+	    "For kill tags (Kill and custom-kill), the name is the name of the mob.",
+	    "To get a list of all available entity types, check the",
+	    "bukkit JavaDocs for a complete list of entity types",
+	    "https://minecraft.gamepedia.com/Mob#List_of_mobs",
+	    "",
+	    "NOTE: mob names are case sensitive.",
+	    "",
+	    "For custom-kill, it is the name of the job (also case sensitive).",
+	    "",
+	    "NOTE: If a job has both the pay for killing a player and for killing a specific class, they will get both payments.",
+	    "#######################################################################",
+	    "payment for breaking a block");
+
+	cfg.addComment(pt + ".Break.oak_log", "block name/id (with optional sub-type)");
+	cfg.addComment(pt + ".Break.oak_log.income", "base income, can be not used if using point system");
+	cfg.get(pt + ".Break.oak_log.income", 5D);
+	cfg.addComment(pt + ".Break.oak_log.points", "base points, can be not used if using income system");
+	cfg.get(pt + ".Break.oak_log.points", 5D);
+	cfg.addComment(pt + ".Break.oak_log.experience", "base experience");
+	cfg.get(pt + ".Break.oak_log.experience", 5D);
+	cfg.addComment(pt + ".Break.oak_log.from-level", "(OPTIONAL) from which level of this job player can get money for this action",
+	    "if not given, then player will always get money for this action",
+	    "this can be used for any action");
+	cfg.get(pt + ".Break.oak_log.from-level", 1);
+	cfg.addComment(pt + ".Break.oak_log.until-level", "(OPTIONAL) until which level player can get money for this action.",
+	    "if not given, then there is no limit",
+	    "this can be used for any action");
+	cfg.get(pt + ".Break.oak_log.until-level", 30);
+	cfg.addComment(pt + ".Break.oak_log.softIncomeLimit", "(OPTIONAL) Soft limits will allow to stop income/exp/point payment increase at some particular level but allow further general leveling.",
+	    "In example if player is level 70, he will get paid as he would be at level 50, exp gain will be as he would be at lvl 40 and point gain will be as at level 60",
+	    "This only applies after players level is higher than provided particular limit.");
+	cfg.get(pt + ".Break.oak_log.softIncomeLimit", 50);
+	cfg.get(pt + ".Break.oak_log.softExpLimit", 40);
+	cfg.get(pt + ".Break.oak_log.softPointsLimit", 60);
+
+	cfg.addComment(pt + ".Break.gravel.income", "you can use minuses to take away money if the player break this block");
+	cfg.get(pt + ".Break.gravel.income", -1D);
+
+	cfg.addComment(pt + ".permissions.firstNode.permission", "The permission node");
+	cfg.get(pt + ".permissions.firstNode.permission", "aaaaaatest.node");
 
 	cfg.save();
     }
 
-    public void reload() throws IOException {
+    public void reload() {
 	// job settings
-	loadJobSettings();
+	try {
+	    loadJobSettings();
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
     }
 
     public YamlConfiguration getJobConfig() {
@@ -345,6 +404,7 @@ public class ConfigManager {
 	case MILK:
 	case MMKILL:
 	case BOSS:
+	case TAME:
 	case BREED:
 	case SHEAR:
 	case EXPLORE:
@@ -811,7 +871,7 @@ public class ConfigManager {
 			continue;
 		    }
 
-		    String node = permissionKey.toLowerCase().replace('_', '.');
+		    String node = permissionSection.getString("permission");
 		    boolean value = permissionSection.getBoolean("value", true);
 		    int levelRequirement = permissionSection.getInt("level", 0);
 		    jobPermissions.add(new JobPermission(node, value, levelRequirement));
@@ -872,6 +932,12 @@ public class ConfigManager {
 		    int levelUntil = commandSection.getInt("levelUntil");
 		    jobCommand.add(new JobCommands(commandKey.toLowerCase(), commands, levelFrom, levelUntil));
 		}
+	    }
+
+	    // Commands
+	    List<String> worldBlacklist = new ArrayList<>();
+	    if (jobSection.isList("world-blacklist")) {
+		worldBlacklist = jobSection.getStringList("world-blacklist");
 	    }
 
 	    // Items **OUTDATED** Moved to ItemBoostManager!!
@@ -979,7 +1045,7 @@ public class ConfigManager {
 	    }
 
 	    Job job = new Job(jobKey, jobFullName, jobShortName, description, color, maxExpEquation, displayMethod, maxLevel, vipmaxLevel, maxSlots, jobPermissions, jobCommand,
-		jobConditions, jobItems, jobLimitedItems, JobsCommandOnJoin, JobsCommandOnLeave, GUIitem, bossbar, rejoinCd);
+		jobConditions, jobItems, jobLimitedItems, JobsCommandOnJoin, JobsCommandOnLeave, GUIitem, bossbar, rejoinCd, worldBlacklist);
 
 	    job.setFullDescription(fDescription);
 	    job.setMoneyEquation(incomeEquation);
@@ -1022,7 +1088,7 @@ public class ConfigManager {
 				try {
 				    ActionType actionType = ActionType.getByName(split[0]);
 				    String mats = split[1];
-				    String[] co = mats.split(",");
+				    String[] co = mats.contains(",") ? mats.split(",") : new String[0];
 
 				    int amount = 1;
 				    if (split.length == 3) {
@@ -1120,6 +1186,7 @@ public class ConfigManager {
 			case MMKILL:
 			case BOSS:
 			case BREED:
+			case TAME:
 			case SHEAR:
 			case EXPLORE:
 			case CUSTOMKILL:

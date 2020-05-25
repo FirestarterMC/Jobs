@@ -114,21 +114,20 @@ public class PlayerManager {
     public void addPlayerToMap(PlayerInfo info) {
 	PlayerUUIDMap.put(info.getUuid(), info);
 	PlayerIDMap.put(info.getID(), info);
-	if (info.getName() != null)
-	    PlayerNameMap.put(info.getName().toLowerCase(), info);
+	PlayerNameMap.put(info.getName().toLowerCase(), info);
     }
 
     public void addPlayerToCache(JobsPlayer jPlayer) {
-	if (jPlayer.getName() != null && playersCache.get(jPlayer.getName().toLowerCase()) == null)
+	if (!playersCache.containsKey(jPlayer.getName().toLowerCase()))
 	    playersCache.put(jPlayer.getName().toLowerCase(), jPlayer);
-	if (jPlayer.getUniqueId() != null && playersUUIDCache.get(jPlayer.getUniqueId()) == null)
+	if (jPlayer.getUniqueId() != null && !playersUUIDCache.containsKey(jPlayer.getUniqueId()))
 	    playersUUIDCache.put(jPlayer.getUniqueId(), jPlayer);
     }
 
     public void addPlayer(JobsPlayer jPlayer) {
-	if (jPlayer.getName() != null && players.get(jPlayer.getName().toLowerCase()) == null)
+	if (!players.containsKey(jPlayer.getName().toLowerCase()))
 	    players.put(jPlayer.getName().toLowerCase(), jPlayer);
-	if (jPlayer.getUniqueId() != null && playersUUID.get(jPlayer.getUniqueId()) == null)
+	if (jPlayer.getUniqueId() != null && !playersUUID.containsKey(jPlayer.getUniqueId()))
 	    playersUUID.put(jPlayer.getUniqueId(), jPlayer);
     }
 
@@ -136,10 +135,10 @@ public class PlayerManager {
 	if (player == null)
 	    return null;
 
-	if (players.get(player.getName()) != null)
+	if (players.containsKey(player.getName()))
 	    players.remove(player.getName().toLowerCase());
 
-	JobsPlayer jPlayer = playersUUID.get(player.getUniqueId()) != null ? playersUUID.remove(player.getUniqueId()) : null;
+	JobsPlayer jPlayer = playersUUID.containsKey(player.getUniqueId()) ? playersUUID.remove(player.getUniqueId()) : null;
 	return jPlayer;
     }
 
@@ -266,21 +265,28 @@ public class PlayerManager {
 	int y = 0;
 	int i = 0;
 	int total = playersUUIDCache.size();
+
 	for (Entry<UUID, JobsPlayer> one : playersUUIDCache.entrySet()) {
 	    JobsPlayer jPlayer = one.getValue();
+
 	    if (resetID)
 		jPlayer.setUserId(-1);
+
 	    JobsDAO dao = Jobs.getJobsDAO();
 	    dao.updateSeen(jPlayer);
-	    if (jPlayer.getUserId() == -1)
+
+	    if (!resetID && jPlayer.getUserId() == -1)
 		continue;
+
 	    for (JobProgression oneJ : jPlayer.getJobProgression())
 		dao.insertJob(jPlayer, oneJ);
 	    dao.saveLog(jPlayer);
 	    dao.savePoints(jPlayer);
 	    dao.recordPlayersLimits(jPlayer);
+
 	    i++;
 	    y++;
+
 	    if (y >= 1000) {
 		Jobs.consoleMsg("&e[Jobs] Saved " + i + "/" + total + " players data");
 		y = 0;
@@ -389,6 +395,7 @@ public class PlayerManager {
 	    return;
 
 	Jobs.getJobsDAO().joinJob(jPlayer, jPlayer.getJobProgression(job));
+	jPlayer.setLeftTime(job);
 
 	PerformCommands.PerformCommandsOnJoin(jPlayer, job);
 
@@ -422,6 +429,8 @@ public class PlayerManager {
 	    return false;
 	PerformCommands.PerformCommandsOnLeave(jPlayer, job);
 	Jobs.leaveSlot(job);
+
+	jPlayer.getLeftTimes().remove(jPlayer.getUniqueId());
 
 	Jobs.getSignUtil().updateAllSign(job);
 	job.updateTotalPlayers();
@@ -790,11 +799,8 @@ public class PlayerManager {
      * @return True if he have permission
      */
     public boolean getJobsLimit(JobsPlayer jPlayer, Short currentCount) {
-
 	Double max = Jobs.getPermissionManager().getMaxPermission(jPlayer, "jobs.max");
-
 	max = max == null ? Jobs.getGCManager().getMaxJobs() : max;
-
 	if (max > currentCount)
 	    return true;
 
@@ -981,7 +987,10 @@ public class PlayerManager {
     public Boost getFinalBonus(JobsPlayer player, Job prog, Entity ent, LivingEntity victim, boolean force, boolean getall) {
 	Boost boost = new Boost();
 
-	if (player == null || !player.isOnline() || prog == null)
+	if (player == null || !player.isOnline())
+	    return boost;
+
+	if (prog == null)
 	    return boost;
 
 	if (HookManager.getMcMMOManager().mcMMOPresent || HookManager.getMcMMOManager().mcMMOOverHaul)
@@ -1023,7 +1032,8 @@ public class PlayerManager {
 	    boost.add(BoostOf.Dynamic, new BoostMultiplier().add(prog.getBonus()));
 //	boost.add(BoostOf.Item, Jobs.getPlayerManager().getItemBoost(player.getPlayer(), prog));
 	boost.add(BoostOf.Item, getItemBoostNBT(player.getPlayer(), prog));
-	boost.add(BoostOf.Area, new BoostMultiplier().add(Jobs.getRestrictedAreaManager().getRestrictedMultiplier(player.getPlayer())));
+	if (!Jobs.getRestrictedAreaManager().getRestrictedAres().isEmpty())
+	    boost.add(BoostOf.Area, new BoostMultiplier().add(Jobs.getRestrictedAreaManager().getRestrictedMultiplier(player.getPlayer())));
 	return boost;
     }
 

@@ -102,7 +102,7 @@ Jobs:
     # Players will have access to quests from jobs he is currently working at
     Quests:
       # Quest identification. Can be any ONE word or number or both of them. This doesn't have any real meaning but it can't repeat.
-      1:
+      first:
         # Quest name used for quests list, don't forget to enclose it with " "
         Name: "Break Oak wood"
         # List of objectives this quest will require for it to count as finished
@@ -141,7 +141,7 @@ Jobs:
         # Defines from which level you want to give option to get this quest
         # You can use both limitations to have limited quests for particular job level ranges
         fromLevel: 3
-      2:
+      second:
         Name: "Zombie killer"
         Objectives:
         - Kill;Zombie;50
@@ -151,7 +151,7 @@ Jobs:
         RewardDesc:
         - "Kill 50 zombies"
         - "Get 2000 for this!"
-      3:
+      third:
         Name: "Chicken cooker"
         Objectives:
         - "Smelt;COOKED_CHICKEN;20"
@@ -161,7 +161,7 @@ Jobs:
         RewardDesc:
         - "Cook some chicken breasts"
         - "Get 300 for this!"
-      4:
+      fourth:
         Name: "Strip logs"
         Objectives:
         - "StripLogs;stripped_birch_log;25"
@@ -226,7 +226,7 @@ Jobs:
         # you can use minuses to take away money if the player break this block
         income: -1.0
         experience: -1.0
-    # Payment for collecting sweet berries or collect from composter
+    # Payment for collecting things like sweet berry bush, composter or honey
     Collect:
       sweet_berry_bush-3:
         income: 0.5
@@ -484,15 +484,18 @@ Jobs:
     # permissions granted for joining class
     permissions:
       # example node
-      # NOTE: You should use "_" instead of "." dot, because the file will be saved on
-      # plugin load, so it will changes the configuration.
-      aaaaaatest_node:
+      # Any name can be accepted
+      firstNode:
         # true to give, false to revoke
         value: true
+        # The permission node
+        permission: "aaaaaatest.node"
         # minimum level needed to grant permission. Use 0 for all levels
         level: 0
-      aaaaaatest_node2:
+      secNode:
         value: true
+        # The permission node
+        permission: "aaaaaatest.node2"
         # Permission granted when reaching level 10
         level: 10
     # Permissions granted when particular conditions are meet
@@ -526,6 +529,10 @@ Jobs:
         - msg [player] Now you can use woodcutter kit!
         levelFrom: 150
         levelUntil: 150
+    # World list in which this job will not work. World name should be exact
+    world-blacklist:
+    - plotworld
+    - teamworld
     # Getting more money when equipped with specific weapon/tool are wearing armor
     items:
       # Just name, don't have any impact

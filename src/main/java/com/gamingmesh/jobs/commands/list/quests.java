@@ -1,6 +1,7 @@
 package com.gamingmesh.jobs.commands.list;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -10,6 +11,7 @@ import org.bukkit.entity.Player;
 import com.gamingmesh.jobs.Jobs;
 import com.gamingmesh.jobs.commands.Cmd;
 import com.gamingmesh.jobs.commands.JobCommand;
+import com.gamingmesh.jobs.container.ActionType;
 import com.gamingmesh.jobs.container.JobProgression;
 import com.gamingmesh.jobs.container.JobsPlayer;
 import com.gamingmesh.jobs.container.QuestObjective;
@@ -24,11 +26,11 @@ public class quests implements Cmd {
     public boolean perform(Jobs plugin, final CommandSender sender, String[] args) {
 	JobsPlayer jPlayer = null;
 
-	if (args.length >= 1 && args[0].equals("next")) {
+	if (args.length >= 1 && args[0].equals("next") && (!(args[0].equalsIgnoreCase("stop") || args[0].equalsIgnoreCase("start")))) {
 	    jPlayer = Jobs.getPlayerManager().getJobsPlayer((Player) sender);
 	    jPlayer.resetQuests();
 	} else {
-	    if (args.length >= 1) {
+	    if (args.length >= 1 && (!(args[0].equalsIgnoreCase("stop") || args[0].equalsIgnoreCase("start")))) {
 		if (!Jobs.hasPermission(sender, "jobs.command.admin.quests", true))
 		    return true;
 
@@ -50,66 +52,94 @@ public class quests implements Cmd {
 	    return true;
 	}
 
-	sender.sendMessage(Jobs.getLanguage().getMessage("command.quests.toplineseparator", "[playerName]", jPlayer.getName(), "[questsDone]", jPlayer.getDoneQuests()));
-	if (sender instanceof Player) {
-	    for (JobProgression jobProg : jPlayer.getJobProgression()) {
-		List<QuestProgression> list = jPlayer.getQuestProgressions(jobProg.getJob());
+	if (args.length >= 1) {
+	    Boolean stopped = null;
+	    String cmd = args.length == 1 ? args[0] : args[1];
+	    if (cmd.equalsIgnoreCase("stop") && Jobs.hasPermission(sender, "jobs.command.admin.quests.stop", false)) {
+		stopped = true;
+	    } else if (cmd.equalsIgnoreCase("start") && Jobs.hasPermission(sender, "jobs.command.admin.quests.start", false)) {
+		stopped = false;
+	    }
 
-		for (QuestProgression q : list) {
-		    String progressLine = Jobs.getCommandManager().jobProgressMessage(q.getTotalAmountNeeded(), q.getTotalAmountDone());
-
-		    if (q.isCompleted())
-			progressLine = Jobs.getLanguage().getMessage("command.quests.output.completed");
-
-		    RawMessage rm = new RawMessage();
-		    String msg = Jobs.getLanguage().getMessage("command.quests.output.questLine", "[progress]",
-			progressLine, "[questName]", q.getQuest().getQuestName(), "[done]", q.getTotalAmountDone(), "[required]", q.getTotalAmountNeeded());
-
-		    String hoverMsg = Jobs.getLanguage().getMessage("command.quests.output.hover");
-		    List<String> hoverList = new ArrayList<>();
-		    for (String current : hoverMsg.split("\n")) {
-			current = current.replace("[jobName]", jobProg.getJob().getName())
-				    .replace("[time]", TimeManage.to24hourShort(q.getValidUntil() - System.currentTimeMillis()));
-
-			if (current.contains("[desc]")) {
-			    for (String one : q.getQuest().getDescription()) {
-				hoverList.add(one);
-			    }
-			} else {
-			    hoverList.add(current);
-			}
+	    if (stopped != null) {
+		for (JobProgression jobProg : jPlayer.getJobProgression()) {
+		    List<QuestProgression> list = jPlayer.getQuestProgressions(jobProg.getJob());
+		    for (QuestProgression q : list) {
+			q.getQuest().setStopped(stopped);
 		    }
+		}
 
-		    for (Entry<String, QuestObjective> oneObjective : q.getQuest().getObjectives().entrySet()) {
+		sender.sendMessage(Jobs.getLanguage().getMessage("command.quests.status.changed", "%status%",
+		stopped ? Jobs.getLanguage().getMessage("command.quests.status.stopped") :
+		    Jobs.getLanguage().getMessage("command.quests.status.started")));
+		return true;
+	    }
+	}
+
+	sender.sendMessage(Jobs.getLanguage().getMessage("command.quests.toplineseparator", "[playerName]", jPlayer.getName(), "[questsDone]", jPlayer.getDoneQuests()));
+	if (!(sender instanceof Player)) {
+	    return true;
+	}
+
+	for (JobProgression jobProg : jPlayer.getJobProgression()) {
+	    List<QuestProgression> list = jPlayer.getQuestProgressions(jobProg.getJob());
+
+	    for (QuestProgression q : list) {
+		String progressLine = Jobs.getCommandManager().jobProgressMessage(q.getTotalAmountNeeded(), q.getTotalAmountDone());
+
+		if (q.isCompleted())
+		    progressLine = Jobs.getLanguage().getMessage("command.quests.output.completed");
+
+		RawMessage rm = new RawMessage();
+		String msg = Jobs.getLanguage().getMessage("command.quests.output.questLine", "[progress]",
+		    progressLine, "[questName]", q.getQuest().getQuestName(), "[done]", q.getTotalAmountDone(), "[required]", q.getTotalAmountNeeded());
+
+		String hoverMsg = Jobs.getLanguage().getMessage("command.quests.output.hover");
+		List<String> hoverList = new ArrayList<>();
+		for (String current : hoverMsg.split("\n")) {
+		    current = current.replace("[jobName]", jobProg.getJob().getName())
+			.replace("[time]", TimeManage.to24hourShort(q.getValidUntil() - System.currentTimeMillis()));
+
+		    if (current.contains("[desc]")) {
+			for (String one : q.getQuest().getDescription()) {
+			    hoverList.add(one);
+			}
+		    } else {
+			hoverList.add(current);
+		    }
+		}
+
+		for (Entry<ActionType, HashMap<String, QuestObjective>> oneAction : q.getQuest().getObjectives().entrySet()) {
+		    for (Entry<String, QuestObjective> oneObjective : oneAction.getValue().entrySet()) {
 			hoverList.add(Jobs.getLanguage().getMessage("command.info.output." + oneObjective.getValue().getAction().toString().toLowerCase() + ".info") + " " +
 			    Jobs.getNameTranslatorManager().Translate(oneObjective.getKey(), oneObjective.getValue().getAction(), oneObjective.getValue().getTargetId(), oneObjective.getValue()
 				.getTargetMeta(), oneObjective.getValue().getTargetName())
 			    + " " + q.getAmountDone(oneObjective.getValue()) + "/"
 			    + oneObjective.getValue().getAmount());
 		    }
-
-		    String hover = "";
-		    for (String one : hoverList) {
-			if (!hover.isEmpty())
-			    hover += "\n";
-			hover += one;
-		    }
-
-		    if (list.size() < jobProg.getJob().getQuests().size() && Jobs.getGCManager().getDailyQuestsSkips() > jPlayer.getSkippedQuests()) {
-			if (Jobs.getGCManager().getDailyQuestsSkips() > 0) {
-			    hover += "\n" + Jobs.getLanguage().getMessage("command.quests.output.skip");
-			    hover += "\n" + Jobs.getLanguage().getMessage("command.quests.output.skips", "[skips]", (Jobs.getGCManager().getDailyQuestsSkips() - jPlayer.getSkippedQuests()));
-			}
-			rm.add(msg, hover, "jobs skipquest " + jobProg.getJob().getName() + " " + q.getQuest().getConfigName() + " " + jPlayer.getName());
-		    } else
-			rm.add(msg, hover);
-		    rm.show(sender);
 		}
-	    }
-	} else
-	    return true;
-	sender.sendMessage(Jobs.getLanguage().getMessage("general.info.separator"));
 
+		String hover = "";
+		for (String one : hoverList) {
+		    if (!hover.isEmpty())
+			hover += "\n";
+
+		    hover += one;
+		}
+
+		if (list.size() < jobProg.getJob().getQuests().size() && Jobs.getGCManager().getDailyQuestsSkips() > jPlayer.getSkippedQuests()) {
+		    if (Jobs.getGCManager().getDailyQuestsSkips() > 0) {
+			hover += "\n" + Jobs.getLanguage().getMessage("command.quests.output.skip");
+			hover += "\n" + Jobs.getLanguage().getMessage("command.quests.output.skips", "[skips]", (Jobs.getGCManager().getDailyQuestsSkips() - jPlayer.getSkippedQuests()));
+		    }
+		    rm.add(msg, hover, "jobs skipquest " + jobProg.getJob().getName() + " " + q.getQuest().getConfigName() + " " + jPlayer.getName());
+		} else
+		    rm.add(msg, hover);
+		rm.show(sender);
+	    }
+	}
+
+	sender.sendMessage(Jobs.getLanguage().getMessage("general.info.separator"));
 	return true;
     }
 }

@@ -111,7 +111,8 @@ public class editquests implements Cmd {
 			    return false;
 			}
 
-			HashMap<String, QuestObjective> obj = quest.getObjectives();
+			HashMap<String, QuestObjective> obj = quest.getObjectives().get(actionT);
+
 			if (obj == null || obj.isEmpty())
 			    return false;
 
@@ -178,7 +179,8 @@ public class editquests implements Cmd {
 			return false;
 		    }
 
-		    HashMap<String, QuestObjective> obj = quest.getObjectives();
+		    HashMap<String, QuestObjective> obj = quest.getObjectives().get(actionT);
+
 		    if (obj == null || obj.isEmpty())
 			return false;
 
@@ -206,7 +208,7 @@ public class editquests implements Cmd {
 			return false;
 		    }
 
-		    HashMap<String, QuestObjective> obj = q.getObjectives();
+		    HashMap<String, QuestObjective> obj = q.getObjectives().get(actionT);
 		    if (obj == null || obj.isEmpty())
 			return false;
 
@@ -354,6 +356,7 @@ public class editquests implements Cmd {
 		    case MMKILL:
 		    case BOSS:
 		    case BREED:
+		    case TAME:
 		    case SHEAR:
 		    case EXPLORE:
 		    case CUSTOMKILL:

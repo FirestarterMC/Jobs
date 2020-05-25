@@ -59,7 +59,7 @@ command:
   moneyboost:
     help:
       info: Booster le gain d'argent pour tous les joueurs
-      args: '[jobname] [rate]'
+      args: '[jobname]/all/reset [rate]/all'
     output:
       allreset: Tous les boost d'argent ont été désactivés
       jobsboostreset: Le boost d'argent pour le métier %jobname% a été désactivé
@@ -70,7 +70,7 @@ command:
   pointboost:
     help:
       info: Booster les points pour tous les joueurs
-      args: '[jobname] [rate]'
+      args: '[jobname]/all/reset [rate]/all'
     output:
       allreset: Tous les boosts de points ont été désactivés
       jobsboostreset: Le boost de points pour le métier %jobname% a été désactivé
@@ -81,7 +81,7 @@ command:
   expboost:
     help:
       info: Booster l'XP pour tous les joueurs
-      args: '[jobname] [rate]'
+      args: '[jobname]/all/reset [rate]/all'
     output:
       allreset: Tous les boost d'XP ont été désactivés
       jobsboostreset: Le boost d'EXP pour le métier %jobname% a été désactivé
@@ -94,8 +94,8 @@ command:
       info: Vérifier l'objet bonus
       args: ''
     output:
-      list: '&e[jobname] : %money% %points% %exp%'
-      notAplyingList: '&e[jobname] : %money% %points% %exp%'
+      list: '&e[jobname]: %money% %points% %exp%'
+      notAplyingList: '&7[jobname]: %money% %points% %exp%'
       hover: '&7%itemtype%'
       hoverLevelLimits: "&7Du niveau: %from%\n&7Au niveau: %until%"
   edititembonus:
@@ -247,6 +247,8 @@ command:
     error:
       nojob: Vous n'avez pas de métier.
     output: 'Level %joblevel% for %jobname%: %jobxp%/%jobmaxxp% xp'
+    bossBarOutput: 'Lvl %joblevel% %jobname%: %jobxp%/%jobmaxxp% xp%gain%'
+    bossBarGain: ' &7(&f%gain%&7)'
   shop:
     help:
       info: Ouvre les shops de métiers.
@@ -279,7 +281,7 @@ command:
       info: Donne un objet par nom de métier et nom de catégorie d'objet. Le pseudo est facultatif.
       args: '[playername] [jobname] [items/limiteditems] [jobitemname]'
     output:
-      notonline: '&4Player [%playername%] est hors-ligne !'
+      notonline: '&4Player with that name is not online!'
       noitem: '&4Ce nom ne correspond à aucun objet !'
   info:
     help:
@@ -462,6 +464,10 @@ command:
     error:
       noquests: '&cIl n''y a pas de quête'
     toplineseparator: '&7*********************** &6[playerName] &2(&f[questsDone]&2) &7***********************'
+    status:
+      changed: '&2The quests status has been changed to&r %status%'
+      started: '&aStarted'
+      stopped: '&cStopped'
     output:
       completed: '&2      ! Terminé !&r      '
       questLine: '[progress] &7[questName] &f[done]&7/&8[required]'
@@ -479,7 +485,7 @@ command:
   fireall:
     help:
       info: Renvoie le joueur de tous ses métiers.
-      args: '[playername]'
+      args: '[playername]/all'
     error:
       nojobs: Le joueur n'a aucun métier!
     output:
@@ -656,8 +662,8 @@ message:
   crafting:
     fullinventory: 'Votre inventaire est plein!'
 signs:
-  List: '&0[number].&8[player]&7 :&4[level]'
-  questList: '&0[number].&8[player]&7 :&4[quests]'
+  List: '&0[number].&8[player]&7:&4[level]'
+  questList: '&0[number].&8[player]&7:&4[quests]'
   SpecialList:
     p1: '&b** &8Premier &b**'
     p2: '&b** &8Deuxième &b**'

@@ -63,8 +63,9 @@ public class SignUtil {
 	    SignsByType.put(jSign.getIdentifier().toLowerCase(), old);
 	}
 
-	String loc = jSign.locToBlockString();
-	old.put(loc, jSign);
+	old.put(jSign.locToBlockString(), jSign);
+
+	SignsByType.put(jSign.getIdentifier().toLowerCase(), old);
     }
 
     public void LoadSigns() {
@@ -164,6 +165,8 @@ public class SignUtil {
 
     public void updateAllSign(Job job) {
 	for (SignTopType types : SignTopType.values()) {
+	    if (types == SignTopType.questtoplist)
+		continue;
 	    SignUpdate(job, types);
 	}
     }
@@ -173,19 +176,17 @@ public class SignUtil {
     }
 
     public boolean SignUpdate(Job job, SignTopType type) {
+
 	if (!Jobs.getGCManager().SignsEnabled)
 	    return true;
-
-	if (job == null) {
-	    return false;
-	}
 
 	if (type == null)
 	    type = SignTopType.toplist;
 
 	String JobNameOrType = jobsSign.getIdentifier(job, type);
+
 	HashMap<String, jobsSign> signs = this.SignsByType.get(JobNameOrType.toLowerCase());
-	if (signs == null)
+	if (signs == null || signs.isEmpty())
 	    return false;
 
 	List<TopList> PlayerList = new ArrayList<>();
@@ -324,8 +325,8 @@ public class SignUtil {
 	    "[job]", jobname);
     }
 
-	@SuppressWarnings("deprecation")
-	public boolean UpdateHead(final Sign sign, final String Playername, int timelapse) {
+    @SuppressWarnings("deprecation")
+    public boolean UpdateHead(final Sign sign, final String Playername, int timelapse) {
 	if (Playername == null)
 	    return false;
 

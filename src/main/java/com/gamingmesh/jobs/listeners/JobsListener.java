@@ -86,9 +86,8 @@ import com.gamingmesh.jobs.container.JobsPlayer;
 import com.gamingmesh.jobs.stuff.Util;
 
 public class JobsListener implements Listener {
-    // hook to the main plugin
-    private Jobs plugin;
 
+    private Jobs plugin;
     private HashMap<UUID, Long> interactDelay = new HashMap<>();
 
     public JobsListener(Jobs plugin) {
@@ -302,73 +301,73 @@ public class JobsListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onSignTopListCreate(SignChangeEvent event) {
-        if (!plugin.isEnabled())
-            return;
+	if (!plugin.isEnabled())
+	    return;
 
-        if (!Jobs.getGCManager().SignsEnabled)
-            return;
+	if (!Jobs.getGCManager().SignsEnabled)
+	    return;
 
-        Block block = event.getBlock();
-        if (!(block.getState() instanceof Sign))
-            return;
+	Block block = event.getBlock();
+	if (!(block.getState() instanceof Sign))
+	    return;
 
-        Sign sign = (Sign) block.getState();
+	Sign sign = (Sign) block.getState();
 
-        if (!ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("[Jobs]"))
-            return;
+	if (!ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("[Jobs]"))
+	    return;
 
-        final String signtype = ChatColor.stripColor(event.getLine(1));
-        final SignTopType type = SignTopType.getType(signtype);
-        if (type == null)
-            return;
+	final String signtype = ChatColor.stripColor(event.getLine(1));
+	final SignTopType type = SignTopType.getType(signtype);
+	if (type == null)
+	    return;
 
-        Player player = event.getPlayer();
-        if (!player.hasPermission("jobs.command.signs")) {
-            event.setCancelled(true);
-            player.sendMessage(Jobs.getLanguage().getMessage("signs.cantcreate"));
-            return;
-        }
+	Player player = event.getPlayer();
+	if (!player.hasPermission("jobs.command.signs")) {
+	    event.setCancelled(true);
+	    player.sendMessage(Jobs.getLanguage().getMessage("signs.cantcreate"));
+	    return;
+	}
 
-        String jobname = ChatColor.stripColor(event.getLine(2)).toLowerCase();
-        final Job job = Jobs.getJob(jobname);
-        if ((type == SignTopType.toplist || type == SignTopType.questtoplist) && job == null) {
-            player.sendMessage(Jobs.getLanguage().getMessage("command.top.error.nojob"));
-            return;
-        }
+	String jobname = ChatColor.stripColor(event.getLine(2)).toLowerCase();
+	final Job job = Jobs.getJob(jobname);
+	if (type == SignTopType.toplist && job == null) {
+	    player.sendMessage(Jobs.getLanguage().getMessage("command.top.error.nojob"));
+	    return;
+	}
 
-        boolean special = false;
-        String numberString = ChatColor.stripColor(event.getLine(3)).toLowerCase();
-        if (numberString.contains("s")) {
-            numberString = numberString.replace("s", "");
-            special = true;
-        }
+	boolean special = false;
+	String numberString = ChatColor.stripColor(event.getLine(3)).toLowerCase();
+	if (numberString.contains("s")) {
+	    numberString = numberString.replace("s", "");
+	    special = true;
+	}
 
-        int Number = 0;
-        try {
-            Number = Integer.parseInt(numberString);
-        } catch (NumberFormatException e) {
-            player.sendMessage(Jobs.getLanguage().getMessage("general.error.notNumber"));
-            return;
-        }
+	int Number = 0;
+	try {
+	    Number = Integer.parseInt(numberString);
+	} catch (NumberFormatException e) {
+	    player.sendMessage(Jobs.getLanguage().getMessage("general.error.notNumber"));
+	    return;
+	}
 
-        jobsSign signInfo = new jobsSign();
+	jobsSign signInfo = new jobsSign();
 
-        Location loc = sign.getLocation();
-        signInfo.setLoc(loc);
-        signInfo.setNumber(Number);
-        if (job != null)
-            signInfo.setJobName(job.getName());
-        signInfo.setType(type);
-        signInfo.setSpecial(special);
+	Location loc = sign.getLocation();
+	signInfo.setLoc(loc);
+	signInfo.setNumber(Number);
+	if (job != null)
+	    signInfo.setJobName(job.getName());
+	signInfo.setType(type);
+	signInfo.setSpecial(special);
 
-        final SignUtil signUtil = Jobs.getSignUtil();
-        signUtil.addSign(signInfo);
-        signUtil.saveSigns();
+	final SignUtil signUtil = Jobs.getSignUtil();
+	signUtil.addSign(signInfo);
+	signUtil.saveSigns();
 
-        event.setCancelled(true);
+	event.setCancelled(true);
 
-        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () ->
-                signUtil.SignUpdate(job, type), 1L);
+	Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () ->
+	    signUtil.SignUpdate(job, type), 1L);
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -415,7 +414,7 @@ public class JobsListener implements Listener {
     }
 
     // Adding to chat prefix job name
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (!plugin.isEnabled())
             return;

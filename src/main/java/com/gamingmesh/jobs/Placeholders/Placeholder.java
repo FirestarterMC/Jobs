@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,9 @@ public class Placeholder {
 	user_furncount,
 	user_maxfurncount,
 	user_doneq,
+	user_dailyquests_pending,
+	user_dailyquests_completed,
+	user_dailyquests_total,
 	user_seen,
 	user_totallevels,
 	user_issaved,
@@ -44,6 +48,8 @@ public class Placeholder {
 	user_points,
 	user_total_points,
 	user_archived_jobs,
+	user_jobs,
+
 	user_boost_$1_$2("jname/number", "money/exp/points"),
 	user_isin_$1("jname/number"),
 	user_canjoin_$1("jname/number"),
@@ -377,6 +383,15 @@ public class Placeholder {
 	if (user != null) {
 	    NumberFormat format = NumberFormat.getInstance(Locale.ENGLISH);
 	    switch (placeHolder) {
+	    case user_dailyquests_pending:
+		Integer pendingQuests = (int) user.getQuestProgressions().stream().filter(q -> !q.isCompleted()).count();
+		return Integer.toString(pendingQuests);
+	    case user_dailyquests_completed:
+		Integer completedQuests = (int) user.getQuestProgressions().stream().filter(q -> q.isCompleted()).count();
+		return Integer.toString(completedQuests);
+	    case user_dailyquests_total:
+		Integer dailyquests = user.getQuestProgressions().size();
+		return Integer.toString(dailyquests);
 	    case user_id:
 		return Integer.toString(user.getUserId());
 	    case user_bstandcount:
@@ -406,6 +421,14 @@ public class Placeholder {
 		return Integer.toString(user.getJobProgression().size());
 	    case user_archived_jobs:
 		return Integer.toString(user.getArchivedJobs().getArchivedJobs().size());
+	    case user_jobs:
+		List<JobProgression> l = user.getJobProgression();
+		if (l.isEmpty()) {
+		    return "";
+		}
+
+		JobProgression prog = l.get(ThreadLocalRandom.current().nextInt(l.size()));
+		return prog.getJob().getName();
 	    default:
 		break;
 	    }
@@ -452,7 +475,7 @@ public class Placeholder {
 		    Job jobs = getJobFromValue(vals.get(0));
 		    return jobs == null ? "no" : convert(user.isInJob(jobs));
 		case user_job_$1:
-		    return j == null ? "none" : j.getJob().getName();
+		    return j == null ? "" : j.getJob().getName();
 
 		case maxjobs:
 		    Double max = Jobs.getPermissionManager().getMaxPermission(user, "jobs.max");

@@ -124,7 +124,7 @@ public class BufferedEconomy {
 		    double exp = payment.get(CurrencyType.EXP);
 
 		    if (Jobs.getGCManager().TakeFromPlayersPayment && Jobs.getGCManager().UseTaxes &&
-				((offPlayer.isOnline() && !offPlayer.getPlayer().hasPermission("jobs.tax.bypass")) || !offPlayer.isOnline())) {
+			((offPlayer.isOnline() && !offPlayer.getPlayer().hasPermission("jobs.tax.bypass")) || !offPlayer.isOnline())) {
 			money = money - (money * (Jobs.getGCManager().TaxesAmount / 100.0));
 			points = points - (points * (Jobs.getGCManager().TaxesAmount / 100.0));
 		    }
@@ -137,7 +137,7 @@ public class BufferedEconomy {
 		    double points = payment.get(CurrencyType.POINTS);
 
 		    if (Jobs.getGCManager().TakeFromPlayersPayment && Jobs.getGCManager().UseTaxes &&
-				((offPlayer.isOnline() && !offPlayer.getPlayer().hasPermission("jobs.tax.bypass")) || !offPlayer.isOnline())) {
+			((offPlayer.isOnline() && !offPlayer.getPlayer().hasPermission("jobs.tax.bypass")) || !offPlayer.isOnline())) {
 			payment.set(CurrencyType.MONEY, money - (money * (Jobs.getGCManager().TaxesAmount / 100.0)));
 			payment.set(CurrencyType.POINTS, points - (points * (Jobs.getGCManager().TaxesAmount / 100.0)));
 		    }
@@ -153,13 +153,14 @@ public class BufferedEconomy {
 		ServerTaxesAccount = Bukkit.getOfflinePlayer(ServerTaxesAccountname);
 
 	    if (Jobs.getGCManager().UseTaxes && Jobs.getGCManager().TransferToServerAccount && ServerTaxesAccount != null) {
-		if (TaxesAmount > 0)
+		if (TaxesAmount > 0) {
 		    economy.depositPlayer(ServerTaxesAccount, TaxesAmount);
+		}
 
 		if (ServerTaxesAccount.isOnline()) {
 		    if (Jobs.getGCManager().ActionBarsMessageByDefault) {
 			Jobs.getActionBar().send(Bukkit.getPlayer(ServerAccountname),
-				    Jobs.getLanguage().getMessage("message.taxes", "[amount]", (int) (TotalAmount * 100) / 100.0));
+			    Jobs.getLanguage().getMessage("message.taxes", "[amount]", (int) (TotalAmount * 100) / 100.0));
 		    }
 		}
 	    }
@@ -225,8 +226,7 @@ public class BufferedEconomy {
 
 	String playerUUID = payment.getOfflinePlayer().getUniqueId().toString();
 
-	Boolean show = ToggleBarHandling.getActionBarToggle().get(playerUUID) == null ? true :
-		    ToggleBarHandling.getActionBarToggle().get(playerUUID);
+	Boolean show = ToggleBarHandling.getActionBarToggle().getOrDefault(playerUUID, true);
 	Player abp = Bukkit.getPlayer(payment.getOfflinePlayer().getUniqueId());
 	if ((abp != null) && (show.booleanValue())) {
 	    String Message = Jobs.getLanguage().getMessage("command.toggle.output.paid.main");

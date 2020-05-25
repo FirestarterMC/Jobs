@@ -19,14 +19,18 @@
 package com.gamingmesh.jobs.container;
 
 import com.gamingmesh.jobs.Jobs;
+import com.gamingmesh.jobs.actions.PotionItemActionInfo;
 import com.gamingmesh.jobs.resources.jfep.Parser;
 import com.gamingmesh.jobs.stuff.ChatColor;
 
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 
 public class Job {
 
@@ -37,7 +41,7 @@ public class Job {
     private HashMap<String, JobItems> jobItems;
     private HashMap<String, JobLimitedItems> jobLimitedItems;
     private String jobName = "N/A";
-    private String fullName;
+    private String fullName = "N/A";
     // job short name (for use in multiple jobs)
     private String jobShortName;
     private String description;
@@ -62,6 +66,8 @@ public class Job {
     private Parser moneyEquation, xpEquation, pointsEquation;
 
     private List<String> fDescription = new ArrayList<>();
+
+    private List<String> worldBlacklist = new ArrayList<>();
 
     private List<Quest> quests = new ArrayList<>();
     private int maxDailyQuests = 1;
@@ -90,9 +96,9 @@ public class Job {
      */
     public Job(String jobName, String fullName, String jobShortName, String description, ChatColor jobColour, Parser maxExpEquation, DisplayMethod displayMethod, int maxLevel,
 	int vipmaxLevel, Integer maxSlots, List<JobPermission> jobPermissions, List<JobCommands> jobCommands, List<JobConditions> jobConditions, HashMap<String, JobItems> jobItems,
-	HashMap<String, JobLimitedItems> jobLimitedItems, List<String> CmdOnJoin, List<String> CmdOnLeave, ItemStack GUIitem, String bossbar, Long rejoinCD) {
-	this.jobName = jobName;
-	this.fullName = fullName;
+	HashMap<String, JobLimitedItems> jobLimitedItems, List<String> CmdOnJoin, List<String> CmdOnLeave, ItemStack GUIitem, String bossbar, Long rejoinCD, List<String> worldBlacklist) {
+	this.jobName = jobName == null ? "" : jobName;
+	this.fullName = fullName == null ? "" : fullName;
 	this.jobShortName = jobShortName;
 	this.description = description;
 	this.jobColour = jobColour;
@@ -111,6 +117,7 @@ public class Job {
 	this.GUIitem = GUIitem;
 	this.bossbar = bossbar;
 	this.rejoinCd = rejoinCD;
+	this.worldBlacklist = worldBlacklist;
     }
 
     public void addBoost(CurrencyType type, double Point) {
@@ -118,7 +125,15 @@ public class Job {
     }
 
     public void addBoost(CurrencyType type, double point, int hour, int minute, int second) {
-	boost.add(type, point - 1D, hour, minute, second);
+	final Calendar cal = Calendar.getInstance();
+	cal.setTime(new Date());
+
+	cal.set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY) + hour);
+	cal.set(Calendar.MINUTE, cal.get(Calendar.MINUTE) + minute);
+	cal.set(Calendar.SECOND, cal.get(Calendar.SECOND) + second);
+
+	long time = cal.getTimeInMillis();
+	boost.add(type, point - 1D, time);
     }
 
     public void setBoost(BoostMultiplier BM) {
@@ -132,17 +147,15 @@ public class Job {
     public boolean isSame(Job job) {
 	if (job == null)
 	    return false;
-	if (this.getName() == null && job.getName() == null)
-	    return true;
 	return this.getName().equalsIgnoreCase(job.getName());
     }
 
     public int getTotalPlayers() {
-	if (this.totalPlayers == -1) {
-	    this.totalPlayers = Jobs.getJobsDAO().getTotalPlayerAmountByJobName(this.jobName);
-	    updateBonus();
+	if (totalPlayers == -1) {
+	    updateTotalPlayers();
 	}
-	return this.totalPlayers;
+
+	return totalPlayers;
     }
 
     public void updateTotalPlayers() {
@@ -212,21 +225,27 @@ public class Job {
     }
 
     public JobInfo getJobInfo(ActionInfo action, int level) {
-	for (JobInfo info : getJobInfo(action.getType())) {
-	    if (info.getName().equalsIgnoreCase(action.getNameWithSub()) || (info.getName() + ":" + info.getMeta()).equalsIgnoreCase(action.getNameWithSub())) {
-		if (!info.isInLevelRange(level))
-		    break;
-		return info;
-	    }
-	}
-	for (JobInfo info : getJobInfo(action.getType())) {
-	    if (info.getName().equalsIgnoreCase(action.getName())) {
-		if (!info.isInLevelRange(level))
-		    break;
-		return info;
-	    }
-	}
-	return null;
+
+        BiPredicate<JobInfo, ActionInfo> condition = (jobInfo, actionInfo) -> {
+            if (actionInfo instanceof PotionItemActionInfo) {
+                return jobInfo.getName().equalsIgnoreCase(((PotionItemActionInfo) action).getNameWithPotion()) ||
+                        (jobInfo.getName() + ":" + jobInfo.getMeta()).equalsIgnoreCase(((PotionItemActionInfo) action).getNameWithPotion());
+            } else {
+                return jobInfo.getName().equalsIgnoreCase(action.getNameWithSub()) ||
+                        (jobInfo.getName() + ":" + jobInfo.getMeta()).equalsIgnoreCase(action.getNameWithSub()) ||
+                        jobInfo.getName().equalsIgnoreCase(action.getName());
+            }
+        };
+
+        for (JobInfo info : getJobInfo(action.getType())) {
+            if (condition.test(info, action)) {
+                if (!info.isInLevelRange(level)) {
+                    break;
+                }
+                return info;
+            }
+        }
+        return null;
     }
 
     /**
@@ -507,5 +526,30 @@ public class Job {
 	this.id = id;
 	if (id != 0)
 	    Jobs.getJobsIds().put(id, this);
+    }
+
+    public List<String> getWorldBlacklist() {
+	return worldBlacklist;
+    }
+
+    public boolean isWorldBlackListed(Entity ent) {
+	return isWorldBlackListed(null, ent);
+    }
+
+    public boolean isWorldBlackListed(Block block) {
+	return isWorldBlackListed(block, null);
+    }
+
+    public boolean isWorldBlackListed(Block block, Entity ent) {
+	if (worldBlacklist.isEmpty())
+	    return false;
+
+	if (block != null && worldBlacklist.contains(block.getWorld().getName()))
+	    return true;
+
+	if (ent != null && worldBlacklist.contains(ent.getWorld().getName()))
+	    return true;
+
+	return false;
     }
 }

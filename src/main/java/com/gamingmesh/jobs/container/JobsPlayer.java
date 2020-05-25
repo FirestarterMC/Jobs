@@ -19,7 +19,9 @@
 package com.gamingmesh.jobs.container;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -39,7 +41,7 @@ import com.gamingmesh.jobs.stuff.TimeManage;
 
 public class JobsPlayer {
     // the player the object belongs to
-    private String userName;
+    private String userName = "Unknown";
     // progression of the player in each job
     public UUID playerUUID;
     public ArrayList<JobProgression> progression = new ArrayList<>();
@@ -77,10 +79,12 @@ public class JobsPlayer {
     private int doneQuests = 0;
     private int skippedQuests = 0;
 
+    private final HashMap<UUID, HashMap<Job, Long>> leftTimes = new HashMap<>();
+
     private PlayerPoints pointsData = null;
 
     public JobsPlayer(String userName) {
-	this.userName = userName;
+	this.userName = userName == null ? "Unknown" : userName;
     }
 
     public PlayerPoints getPointsData() {
@@ -91,27 +95,22 @@ public class JobsPlayer {
 
     public void addPoints(Double points) {
 	getPointsData().addPoints(points);
-	Jobs.getJobsDAO().savePoints(this);
     }
 
     public void takePoints(Double points) {
 	getPointsData().takePoints(points);
-	Jobs.getJobsDAO().savePoints(this);
     }
 
     public void setPoints(Double points) {
 	getPointsData().setPoints(points);
-	Jobs.getJobsDAO().savePoints(this);
     }
 
     public void setPoints(PlayerPoints points) {
 	getPointsData().setPoints(points.getCurrentPoints());
 	getPointsData().setTotalPoints(points.getTotalPoints());
 	getPointsData().setNewEntry(points.isNewEntry());
-
-	Jobs.getJobsDAO().savePoints(this);
     }
-    
+
     public boolean havePoints(double points) {
 	return getPointsData().getCurrentPoints() >= points;
     }
@@ -324,10 +323,7 @@ public class JobsPlayer {
      * Reloads limit for this player.
      */
     public void reload(CurrencyType type) {
-	int TotalLevel = 0;
-	for (JobProgression prog : progression) {
-	    TotalLevel += prog.getLevel();
-	}
+	int TotalLevel = getTotalLevels();
 	Parser eq = Jobs.getGCManager().getLimit(type).getMaxEquation();
 	eq.setVariable("totallevel", TotalLevel);
 	limits.put(type, (int) eq.getValue());
@@ -361,17 +357,6 @@ public class JobsPlayer {
      */
     public List<JobProgression> getJobProgression() {
 	return Collections.unmodifiableList(progression);
-    }
-
-    /**
-     * Check if have permission
-     * @return true if have
-     */
-    public boolean havePermission(String perm) {
-	Player player = Bukkit.getPlayer(getUniqueId());
-	if (player != null)
-	    return player.hasPermission(perm);
-	return false;
     }
 
     /**
@@ -643,7 +628,7 @@ public class JobsPlayer {
 
     public int getMaxJobLevelAllowed(Job job) {
 	int maxLevel = 0;
-	if (havePermission("jobs." + job.getName() + ".vipmaxlevel"))
+	if (getPlayer() != null && getPlayer().hasPermission("jobs." + job.getName() + ".vipmaxlevel"))
 	    maxLevel = job.getVipMaxLevel() > job.getMaxLevel() ? job.getVipMaxLevel() : job.getMaxLevel();
 	else
 	    maxLevel = job.getMaxLevel();
@@ -810,9 +795,7 @@ public class JobsPlayer {
      * @return true if online, otherwise false
      */
     public boolean isOnline() {
-	if (getPlayer() != null)
-	    return getPlayer().isOnline();
-	return isOnline;
+	return getPlayer() != null ? getPlayer().isOnline() : isOnline;
     }
 
     public boolean isSaved() {
@@ -852,7 +835,6 @@ public class JobsPlayer {
     }
 
     public boolean canGetPaid(ActionInfo info) {
-
 	List<JobProgression> progression = getJobProgression();
 	int numjobs = progression.size();
 
@@ -884,13 +866,12 @@ public class JobsPlayer {
     }
 
     public boolean inDailyQuest(Job job, String questName) {
-
 	HashMap<String, QuestProgression> qpl = qProgression.get(job.getName());
 	if (qpl == null)
 	    return false;
 
 	for (Entry<String, QuestProgression> one : qpl.entrySet()) {
-	    if (one.getValue().getQuest().getConfigName().equalsIgnoreCase(questName))
+	    if (one.getValue().getQuest() != null && one.getValue().getQuest().getConfigName().equalsIgnoreCase(questName))
 		return true;
 	}
 
@@ -912,10 +893,15 @@ public class JobsPlayer {
 	    if (prog.isEnded())
 		continue;
 
-	    for (Entry<String, QuestObjective> oneObjective : prog.getQuest().getObjectives().entrySet()) {
-		if (type == null || type.name().equals(oneObjective.getValue().getAction().name())) {
-		    ls.add(prog.getQuest().getConfigName().toLowerCase());
-		    break;
+	    if (prog.getQuest() == null)
+		continue;
+
+	    for (Entry<ActionType, HashMap<String, QuestObjective>> oneAction : prog.getQuest().getObjectives().entrySet()) {
+		for (Entry<String, QuestObjective> oneObjective : oneAction.getValue().entrySet()) {
+		    if (type == null || type.name().equals(oneObjective.getValue().getAction().name())) {
+			ls.add(prog.getQuest().getConfigName().toLowerCase());
+			break;
+		    }
 		}
 	    }
 	}
@@ -925,9 +911,15 @@ public class JobsPlayer {
 
     public void resetQuests(Job job) {
 	for (QuestProgression oneQ : getQuestProgressions(job)) {
+	    if (oneQ.getQuest() == null) {
+		continue;
+	    }
+
 	    oneQ.setValidUntil(oneQ.getQuest().getValidUntil());
-	    for (Entry<String, QuestObjective> obj : oneQ.getQuest().getObjectives().entrySet()) {
-		oneQ.setAmountDone(obj.getValue(), 0);
+	    for (Entry<ActionType, HashMap<String, QuestObjective>> base : oneQ.getQuest().getObjectives().entrySet()) {
+		for (Entry<String, QuestObjective> obj : base.getValue().entrySet()) {
+		    oneQ.setAmountDone(obj.getValue(), 0);
+		}
 	    }
 	}
     }
@@ -1023,11 +1015,16 @@ public class JobsPlayer {
 	    int i = 0;
 	    while (i <= job.getQuests().size()) {
 		++i;
-		Quest q = job.getNextQuest(getQuestNameList(job, type), getJobProgression(job).getLevel());
+
+		List<String> currentQuests = new ArrayList<>(g.keySet());
+		Quest q = job.getNextQuest(currentQuests, getJobProgression(job).getLevel());
 		if (q == null)
 		    continue;
+
 		QuestProgression qp = new QuestProgression(q);
-		g.put(qp.getQuest().getConfigName().toLowerCase(), qp);
+		if (qp.getQuest() != null)
+		    g.put(qp.getQuest().getConfigName().toLowerCase(), qp);
+
 		if (g.size() >= job.getMaxDailyQuests())
 		    break;
 	    }
@@ -1047,12 +1044,21 @@ public class JobsPlayer {
 	qProgression.put(job.getName(), g);
 
 	for (Entry<String, QuestProgression> oneJ : g.entrySet()) {
+	    Quest q = oneJ.getValue().getQuest();
+	    if (q == null) {
+		continue;
+	    }
+
 	    if (type == null) {
-		tmp.put(oneJ.getValue().getQuest().getConfigName().toLowerCase(), oneJ.getValue());
-	    } else
-		for (Entry<String, QuestObjective> one : oneJ.getValue().getQuest().getObjectives().entrySet()) {
+		tmp.put(q.getConfigName().toLowerCase(), oneJ.getValue());
+		continue;
+	    }
+
+	    HashMap<String, QuestObjective> old = q.getObjectives().get(type);
+	    if (old != null)
+		for (Entry<String, QuestObjective> one : old.entrySet()) {
 		    if (type.name().equals(one.getValue().getAction().name())) {
-			tmp.put(oneJ.getValue().getQuest().getConfigName().toLowerCase(), oneJ.getValue());
+			tmp.put(q.getConfigName().toLowerCase(), oneJ.getValue());
 			break;
 		    }
 		}
@@ -1069,14 +1075,21 @@ public class JobsPlayer {
     public String getQuestProgressionString() {
 	String prog = "";
 
-	for (QuestProgression one : this.getQuestProgressions()) {
-	    if (one.getQuest().getObjectives().isEmpty())
+	for (QuestProgression one : getQuestProgressions()) {
+	    Quest q = one.getQuest();
+	    if (q == null) {
+		continue;
+	    }
+
+	    if (q.getObjectives().isEmpty())
 		continue;
 	    if (!prog.isEmpty())
 		prog += ";:;";
-	    prog += one.getQuest().getJob().getName() + ":" + one.getQuest().getConfigName() + ":" + one.getValidUntil() + ":";
-	    for (Entry<String, QuestObjective> oneO : one.getQuest().getObjectives().entrySet()) {
-		prog += oneO.getValue().getAction().toString() + ";" + oneO.getKey() + ";" + one.getAmountDone(oneO.getValue()) + ":;:";
+	    prog += q.getJob().getName() + ":" + q.getConfigName() + ":" + one.getValidUntil() + ":";
+	    for (Entry<ActionType, HashMap<String, QuestObjective>> oneA : q.getObjectives().entrySet()) {
+		for (Entry<String, QuestObjective> oneO : oneA.getValue().entrySet()) {
+		    prog += oneO.getValue().getAction().toString() + ";" + oneO.getKey() + ";" + one.getAmountDone(oneO.getValue()) + ":;:";
+		}
 	    }
 	    prog = prog.endsWith(":;:") ? prog.substring(0, prog.length() - 3) : prog;
 	}
@@ -1135,7 +1148,11 @@ public class JobsPlayer {
 		    oneA = oneA.substring(prog.length() + 1);
 
 		    String target = oneA.split(";")[0];
-		    QuestObjective obj = quest.getObjectives().get(target);
+		    HashMap<String, QuestObjective> old = quest.getObjectives().get(action);
+		    if (old == null)
+			continue;
+
+		    QuestObjective obj = old.get(target);
 
 		    if (obj == null)
 			continue;
@@ -1145,6 +1162,9 @@ public class JobsPlayer {
 		    int done = Integer.parseInt(doneS);
 		    qp.setAmountDone(obj, done);
 		}
+
+		if (qp.isCompleted())
+		    qp.setGivenReward(true);
 
 	    } catch (Exception | Error e) {
 		e.printStackTrace();
@@ -1212,5 +1232,41 @@ public class JobsPlayer {
 
     public void setSkippedQuests(int skippedQuests) {
 	this.skippedQuests = skippedQuests;
+    }
+
+    public HashMap<UUID, HashMap<Job, Long>> getLeftTimes() {
+	return leftTimes;
+    }
+
+    public boolean isLeftTimeEnded(Job job) {
+	UUID uuid = getUniqueId();
+	if (!leftTimes.containsKey(uuid))
+	    return false;
+
+	HashMap<Job, Long> map = leftTimes.get(uuid);
+	if (!map.containsKey(job))
+	    return false;
+
+	return map.get(job).longValue() < System.currentTimeMillis();
+    }
+
+    public void setLeftTime(Job job) {
+	UUID uuid = getUniqueId();
+
+	if (leftTimes.containsKey(uuid))
+	    leftTimes.remove(uuid);
+
+	int hour = Jobs.getGCManager().jobExpiryTime;
+	if (hour == 0)
+	    return;
+
+	Calendar cal = Calendar.getInstance();
+	cal.setTime(new Date());
+
+	cal.set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY) + hour);
+
+	HashMap<Job, Long> map = new HashMap<>();
+	map.put(job, cal.getTimeInMillis());
+	leftTimes.put(uuid, map);
     }
 }

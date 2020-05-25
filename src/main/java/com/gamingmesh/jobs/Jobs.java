@@ -28,19 +28,12 @@ import com.gamingmesh.jobs.Placeholders.NewPlaceholderAPIHook;
 import com.gamingmesh.jobs.Placeholders.Placeholder;
 import com.gamingmesh.jobs.Placeholders.PlaceholderAPIHook;
 import com.gamingmesh.jobs.hooks.HookManager;
-import com.gamingmesh.jobs.hooks.McMMO.McMMOManager;
-import com.gamingmesh.jobs.hooks.MyPet.MyPetManager;
-import com.gamingmesh.jobs.hooks.MythicMobs.MythicMobInterface;
-import com.gamingmesh.jobs.hooks.MythicMobs.MythicMobs2;
-import com.gamingmesh.jobs.hooks.MythicMobs.MythicMobs4;
-import com.gamingmesh.jobs.hooks.WorldGuard.WorldGuardManager;
 import com.gamingmesh.jobs.Signs.SignUtil;
 import com.gamingmesh.jobs.api.JobsExpGainEvent;
 import com.gamingmesh.jobs.api.JobsPrePaymentEvent;
 import com.gamingmesh.jobs.commands.JobsCommands;
 import com.gamingmesh.jobs.config.*;
 import com.gamingmesh.jobs.container.*;
-import com.gamingmesh.jobs.dao.JobsClassLoader;
 import com.gamingmesh.jobs.dao.JobsDAO;
 import com.gamingmesh.jobs.dao.JobsDAOData;
 import com.gamingmesh.jobs.dao.JobsManager;
@@ -66,6 +59,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -93,21 +87,11 @@ public class Jobs extends JavaPlugin {
 
     private static PistonProtectionListener PistonProtectionListener = null;
 
-    @Deprecated
-    private static McMMOManager McMMOManager = null;
-    @Deprecated
-    private static MythicMobInterface MythicManager = null;
-    @Deprecated
-    private static MyPetManager myPetManager = null;
-    @Deprecated
-    private static WorldGuardManager worldGuardManager = null;
-
     private static ConfigManager configManager = null;
     private static GeneralConfigManager GconfigManager = null;
 
     private static Reflections reflections = null;
 
-    private static JobsClassLoader classLoader = null;
     private static JobsDAO dao = null;
     private static List<Job> jobs = null;
     private static Job noneJob = null;
@@ -136,26 +120,10 @@ public class Jobs extends JavaPlugin {
 
     private static PointsData pointsDatabase = null;
 
-    @Deprecated
-    public static McMMOManager getMcMMOManager() {
-	if (McMMOManager == null)
-	    McMMOManager = new McMMOManager();
-	return McMMOManager;
-    }
-
     public static PistonProtectionListener getPistonProtectionListener() {
 	if (PistonProtectionListener == null)
 	    PistonProtectionListener = new PistonProtectionListener();
 	return PistonProtectionListener;
-    }
-
-    @Deprecated
-    public static MyPetManager getMyPetManager() {
-	if (myPetManager == null && getInstance().getServer().getPluginManager().getPlugin("MyPet") != null) {
-	    myPetManager = new MyPetManager();
-	}
-
-	return myPetManager;
     }
 
     private Placeholder Placeholder;
@@ -189,32 +157,6 @@ public class Jobs extends JavaPlugin {
 	}
 
 	return true;
-    }
-
-    @Deprecated
-    public static WorldGuardManager getWorldGuardManager() {
-	return worldGuardManager;
-    }
-
-    @Deprecated
-    public void setMythicManager() {
-	try {
-	    Class.forName("net.elseland.xikage.MythicMobs.API.MythicMobsAPI");
-	    MythicManager = new MythicMobs2(this);
-	} catch (ClassNotFoundException e) {
-	    try {
-		Class.forName("io.lumine.xikage.mythicmobs.api.bukkit.BukkitAPIHelper");
-		MythicManager = new MythicMobs4(this);
-	    } catch (ClassNotFoundException ex) {
-	    }
-	}
-	if (MythicManager != null)
-	    consoleMsg("&e[Jobs] MythicMobs detected.");
-    }
-
-    @Deprecated
-    public static MythicMobInterface getMythicManager() {
-	return MythicManager;
     }
 
     public static Loging getLoging() {
@@ -488,7 +430,7 @@ public class Jobs extends JavaPlugin {
     }
 
     public static Job getJob(int id) {
-	return getJobsIds().get(id);
+	return jobsIds.get(id);
     }
 
     public boolean isPlaceholderAPIEnabled() {
@@ -569,9 +511,62 @@ public class Jobs extends JavaPlugin {
     /**
      * Executes close connections
      */
-    public static void ChangeDatabase() {
-	getDBManager().switchDataBase();
-	getPlayerManager().reload();
+    public static void convertDatabase() {
+	try {
+	    List<Convert> archivelist = dao.convertDatabase();
+
+	    getDBManager().switchDataBase();
+	    getPlayerManager().reload();
+
+	    dao.truncateAllTables();
+	    getPlayerManager().convertChacheOfPlayers(true);
+
+	    dao.continueConvertions(archivelist);
+	    getPlayerManager().clearMaps();
+	    getPlayerManager().clearCache();
+
+	    dao.saveExplore();
+//    Do we really need to convert Block protection?
+//    Jobs.getJobsDAO().saveBlockProtection();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    Jobs.consoleMsg("&cCan't write data to data base, please send error log to dev's.");
+	    return;
+	}
+
+	reload();
+	loadAllPlayersData();
+    }
+
+    /**
+     * Checks if player have the given {@link ActionType} in jobs.
+     * @param jPlayer {@link JobsPlayer}
+     * @param type {@link ActionType}
+     * @return true if the player have the given action
+     */
+    public static boolean isPlayerHaveAction(JobsPlayer jPlayer, ActionType type) {
+	if (jPlayer == null || type == null)
+	    return false;
+
+	boolean found = false;
+
+	t: for (JobProgression prog : jPlayer.getJobProgression()) {
+	    for (JobInfo info : jPlayer.getJobProgression(prog.getJob()).getJob().getJobInfo(type)) {
+		if (info.getActionType() == type) {
+		    found = true;
+		    break t;
+		}
+	    }
+
+	    for (Quest q : prog.getJob().getQuests()) {
+		if (q != null && q.hasAction(type)) {
+		    found = true;
+		    break t;
+		}
+	    }
+	}
+
+	return found;
     }
 
     /**
@@ -580,9 +575,7 @@ public class Jobs extends JavaPlugin {
      * @return the number of slots
      */
     public static int getUsedSlots(Job job) {
-	if (usedSlots.containsKey(job))
-	    return usedSlots.get(job);
-	return 0;
+	return usedSlots.getOrDefault(job, 0);
     }
 
     /**
@@ -601,16 +594,6 @@ public class Jobs extends JavaPlugin {
     public static void leaveSlot(Job job) {
 	if (usedSlots.containsKey(job))
 	    usedSlots.put(job, usedSlots.get(job) - 1);
-    }
-
-    /**
-     * Returns the jobs classloader
-     * @return the classloader
-     */
-    public static JobsClassLoader getJobsClassloader() {
-	if (classLoader == null)
-	    classLoader = new JobsClassLoader(instance);
-	return classLoader;
     }
 
     /**
@@ -663,14 +646,6 @@ public class Jobs extends JavaPlugin {
     @Override
     public void onEnable() {
 	instance = this;
-	setEnabled(true);
-
-	if (instance == null) {
-	    System.out.println("Plugin instance is null. Plugin will be disabled.");
-	    System.out.println("Try restart your server completely. If this not work contact the developers.");
-	    setEnabled(false);
-	    return;
-	}
 
 //	itemManager = new ItemManager(this);
 
@@ -696,7 +671,6 @@ public class Jobs extends JavaPlugin {
 	}
 
 	try {
-
 	    YmlMaker jobConfig = new YmlMaker(this, "jobConfig.yml");
 	    jobConfig.saveDefaultConfig();
 
@@ -734,8 +708,6 @@ public class Jobs extends JavaPlugin {
 	    // register economy
 	    Bukkit.getScheduler().runTask(this, new HookEconomyTask(this));
 
-	    // all loaded properly.
-
 	    dao.loadBlockProtection();
 	    getExplore().load();
 
@@ -744,7 +716,6 @@ public class Jobs extends JavaPlugin {
 	    getCommandManager().fillCommands();
 
 	    getDBManager().getDB().triggerTableIdUpdate();
-
 	} catch (Throwable e) {
 	    e.printStackTrace();
 	    System.out.println("There was some issues when starting plugin. Please contact dev about this. Plugin will be disabled.");
@@ -798,11 +769,7 @@ public class Jobs extends JavaPlugin {
 
 	getGCManager().reload();
 	getLanguage().reload();
-	try {
-		getConfigManager().reload();
-	} catch (IOException e) {
-		e.printStackTrace();
-	}
+	getConfigManager().reload();
 
 	getDBManager().getDB().loadAllJobsWorlds();
 	getDBManager().getDB().loadAllJobsNames();
@@ -842,17 +809,14 @@ public class Jobs extends JavaPlugin {
 	if (instance == null)
 	    return;
 
-	try {
-//	    GUIManager.CloseInventories();
-//	    shopManager.CloseInventories();
-	    dao.saveExplore();
+//	GUIManager.CloseInventories();
+//	shopManager.CloseInventories();
+	dao.saveExplore();
 
-	    getBpManager().saveCache();
-	    FurnaceBrewingHandling.save();
-	    ToggleBarHandling.save();
-	} catch (Throwable e) {
-	    e.printStackTrace();
-	}
+	getBpManager().saveCache();
+	FurnaceBrewingHandling.save();
+	ToggleBarHandling.save();
+
 	shutdown();
 	instance = null;
 	consoleMsg("&e[Jobs] &2Plugin has been disabled successfully.");
@@ -863,8 +827,9 @@ public class Jobs extends JavaPlugin {
 	if (!job.getQuests().isEmpty()) {
 	    List<QuestProgression> q = jPlayer.getQuestProgressions(job, info.getType());
 	    for (QuestProgression one : q) {
-		if (one != null)
+		if (one != null) {
 		    one.processQuest(jPlayer, info);
+		}
 	    }
 	}
     }
@@ -894,21 +859,23 @@ public class Jobs extends JavaPlugin {
     }
 
     public static void action(JobsPlayer jPlayer, ActionInfo info, Block block, Entity ent, LivingEntity victim) {
-
 	if (jPlayer == null)
 	    return;
 
 	List<JobProgression> progression = jPlayer.getJobProgression();
 	int numjobs = progression.size();
-	// no job
 
 	if (!isBpOk(jPlayer, info, block, true))
 	    return;
 
+	// no job
 	if (numjobs == 0) {
-
 	    if (noneJob == null)
 		return;
+
+	    if (noneJob.isWorldBlackListed(block) || noneJob.isWorldBlackListed(block, ent) || noneJob.isWorldBlackListed(victim))
+		return;
+
 	    JobInfo jobinfo = noneJob.getJobInfo(info, 1);
 
 	    checkDailyQuests(jPlayer, noneJob, info);
@@ -1001,7 +968,16 @@ public class Jobs extends JavaPlugin {
 	} else {
 	    FastPayment.clear();
 
+	    List<Job> expiredJobs = new ArrayList<>();
 	    for (JobProgression prog : progression) {
+		if (prog.getJob().isWorldBlackListed(block) || prog.getJob().isWorldBlackListed(block, ent)
+		    || prog.getJob().isWorldBlackListed(victim))
+		    continue;
+
+		if (jPlayer.isLeftTimeEnded(prog.getJob())) {
+		    expiredJobs.add(prog.getJob());
+		}
+
 		int level = prog.getLevel();
 
 		JobInfo jobinfo = prog.getJob().getJobInfo(info, level);
@@ -1049,6 +1025,7 @@ public class Jobs extends JavaPlugin {
 
 		JobsPrePaymentEvent JobsPrePaymentEvent = new JobsPrePaymentEvent(jPlayer.getPlayer(), prog.getJob(), income,
 		    pointAmount, block, ent, victim, info);
+
 		Bukkit.getServer().getPluginManager().callEvent(JobsPrePaymentEvent);
 		// If event is canceled, don't do anything
 		if (JobsPrePaymentEvent.isCancelled()) {
@@ -1127,7 +1104,7 @@ public class Jobs extends JavaPlugin {
 		try {
 		    if (expAmount != 0D && GconfigManager.BossBarEnabled)
 			if (GconfigManager.BossBarShowOnEachAction)
-			    BBManager.ShowJobProgression(jPlayer, prog);
+			    BBManager.ShowJobProgression(jPlayer, prog, expAmount);
 			else
 			    jPlayer.getUpdateBossBarFor().add(prog.getJob().getName());
 		} catch (Throwable e) {
@@ -1166,6 +1143,9 @@ public class Jobs extends JavaPlugin {
 		if (bp != null)
 		    bp.setPaid(true);
 	    }
+
+	    expiredJobs.forEach(j -> getPlayerManager().leaveJob(jPlayer, j));
+	    expiredJobs.clear();
 	}
     }
 
@@ -1184,7 +1164,7 @@ public class Jobs extends JavaPlugin {
 		Integer cd = getBpManager().getBlockDelayTime(block);
 
 		if (time == -1L) {
-		    getBpManager().add(block, cd);
+		    getBpManager().remove(block);
 		    return false;
 		}
 		if ((time < System.currentTimeMillis()) && (bp.getAction() != DBAction.DELETE)) {
@@ -1203,8 +1183,6 @@ public class Jobs extends JavaPlugin {
 		if ((cd == null || cd == 0) && GconfigManager.useGlobalTimer) {
 		    getBpManager().add(block, GconfigManager.globalblocktimer);
 		}
-	    } else if (GconfigManager.useGlobalTimer) {
-		getBpManager().add(block, GconfigManager.globalblocktimer);
 	    }
 	} else if (info.getType() == ActionType.PLACE) {
 	    BlockProtection bp = getBpManager().getBp(block.getLocation());

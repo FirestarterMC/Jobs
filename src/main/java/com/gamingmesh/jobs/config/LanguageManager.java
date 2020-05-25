@@ -291,6 +291,8 @@ public class LanguageManager {
 	    Jobs.getGCManager().getCommandArgs().put("stats", Arrays.asList("[playername]"));
 	    c.get("command.stats.error.nojob", "Please join a job first.");
 	    c.get("command.stats.output", "Level %joblevel% for %jobname%: %jobxp%/%jobmaxxp% xp");
+	    c.get("command.stats.bossBarOutput", "Lvl %joblevel% %jobname%: %jobxp%/%jobmaxxp% xp%gain%");
+	    c.get("command.stats.bossBarGain", " &7(&f%gain%&7)");
 
 	    c.get("command.shop.help.info", "Opens special jobs shop.");
 	    c.get("command.shop.help.args", "");
@@ -319,7 +321,7 @@ public class LanguageManager {
 	    c.get("command.give.help.info", "Gives item by jobs name and item category name. Player name is optional");
 	    c.get("command.give.help.args", "[playername] [jobname] [items/limiteditems] [jobitemname]");
 	    Jobs.getGCManager().getCommandArgs().put("give", Arrays.asList("[playername]", "[jobname]%%[jobitemname]", "[jobitemname]"));
-	    c.get("command.give.output.notonline", "&4Player [%playername%] is not online!");
+	    c.get("command.give.output.notonline", "&4Player with that name is not online!");
 	    c.get("command.give.output.noitem", "&4Can't find any item by given name!");
 
 	    c.get("command.info.help.title", "&2*** &eJobs&2 ***");
@@ -472,6 +474,9 @@ public class LanguageManager {
 	    Jobs.getGCManager().getCommandArgs().put("quests", Arrays.asList("[playername]"));
 	    c.get("command.quests.error.noquests", "&cThere are no quests");
 	    c.get("command.quests.toplineseparator", "&7*********************** &6[playerName] &2(&f[questsDone]&2) &7***********************");
+	    c.get("command.quests.status.changed", "&2The quests status has been changed to&r %status%");
+	    c.get("command.quests.status.started", "&aStarted");
+	    c.get("command.quests.status.stopped", "&cStopped");
 	    c.get("command.quests.output.completed", "&2      !Completed!&r      ");
 	    c.get("command.quests.output.questLine", "[progress] &7[questName] &f[done]&7/&8[required]");
 	    c.get("command.quests.output.skip", "&7Click to skip this quest");

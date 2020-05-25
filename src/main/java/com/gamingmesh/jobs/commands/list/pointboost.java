@@ -64,8 +64,6 @@ public class pointboost implements Cmd {
 						one.addBoost(CurrencyType.POINTS, rate);
 						succeed = true;
 					} else if (sec != 0 || min != 0 || hour != 0) {
-						sender.sendMessage(Jobs.getLanguage().getMessage("command.pointboost.output.boostadded",
-								"%boost%", rate, "%jobname%", one.getName()));
 						one.addBoost(CurrencyType.POINTS, rate, hour, min, sec);
 						succeed = true;
 					}
@@ -103,20 +101,11 @@ public class pointboost implements Cmd {
 				return true;
 			}
 
-			boolean found = false;
-			for (Job one : Jobs.getJobs()) {
-				if (one.getName().equalsIgnoreCase(args[1])) {
-					one.addBoost(CurrencyType.POINTS, 1.0);
-					found = true;
-					break;
-				}
-			}
+			job.addBoost(CurrencyType.POINTS, 1.0);
 
-			if (found) {
-				sender.sendMessage(Jobs.getLanguage().getMessage("command.pointboost.output.jobsboostreset",
-						"%jobname%", job.getName()));
-				return true;
-			}
+			sender.sendMessage(Jobs.getLanguage().getMessage("command.pointboost.output.jobsboostreset", "%jobname%",
+					job.getName()));
+			return true;
 		}
 
 		Job job = Jobs.getJob(args[0]);
