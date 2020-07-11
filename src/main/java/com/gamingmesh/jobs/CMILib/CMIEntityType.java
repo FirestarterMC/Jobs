@@ -2,7 +2,6 @@ package com.gamingmesh.jobs.CMILib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import org.bukkit.block.CreatureSpawner;
@@ -11,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 
 public enum CMIEntityType {
+
     DROPPED_ITEM(1, "Item"),
     EXPERIENCE_ORB(2, "Experience Orb"),
     AREA_EFFECT_CLOUD(3, "Area Effect Cloud"),
@@ -122,9 +122,6 @@ public enum CMIEntityType {
 	"ZGZiNjc1Y2I1YTdlM2ZkMjVlMjlkYTgyNThmMjRmYzAyMGIzZmE5NTAzNjJiOGJjOGViMjUyZTU2ZTc0In19fQ==")),
     SHULKER(69, "Shulker", Arrays.asList(
 	"MWU3MzgzMmUyNzJmODg0NGM0NzY4NDZiYzQyNGEzNDMyZmI2OThjNThlNmVmMmE5ODcxYzdkMjlhZWVhNyJ9fX0=")),
-    CAT(75, "Cat", Arrays.asList(
-	"N2M5Yjc0MDllN2I1MzgzYzE5YjM2MmIyYTBjYjQzZDUwOTNiMTNlMmIyMzRlOGExODkxNTYzZTU1ZWFlOWQ2OCJ9fX0=",
-	"NTg4MDNmMDI3MGY4Y2RmNGUwZmU5NzMyZDQ5NjdjY2NjMGEyZjRmY2QxMThjZDE1MDAwOTc5YjE4ODg1MTQ0ZiJ9fX0=")),
     PIG(90, "Pig", Arrays.asList(
 	"NjIxNjY4ZWY3Y2I3OWRkOWMyMmNlM2QxZjNmNGNiNmUyNTU5ODkzYjZkZjRhNDY5NTE0ZTY2N2MxNmFhNCJ9fX0=",
 	"YzNhYmQ0NGFlNjdkOWM5MjU0ZDE3N2U5NjU4ZGE4NDg0MzM4OWQ1ZTFmZmQyYWYxZmI1MTIxN2M3NWMyOTgifX19")),
@@ -189,19 +186,9 @@ public enum CMIEntityType {
 	"ZjBiZmE4NTBmNWRlNGIyOTgxY2NlNzhmNTJmYzJjYzdjZDdiNWM2MmNhZWZlZGRlYjljZjMxMWU4M2Q5MDk3In19fQ==",
 	"ZjhhODJjOGI3NWRkMWMyY2U4MTMzYzBiYTkzOWI4YzUyZTQ3ZDNlYzM3NDk1MGY0N2RkZGJiZTM0NWUyMCJ9fX0=",
 	"YWNhNTgwYjA1MWM2M2JlMjlkYTU0NWE5YWE3ZmY3ZTEzNmRmNzdhODFjNjdkYzFlZTllNjE3MGMxNGZiMzEwIn19fQ==")),
-    PANDA(113, "Panda", Arrays.asList(
-	"ZDE4OGM5ODBhYWNmYTk0Y2YzMzA4ODUxMmIxYjk1MTdiYTgyNmIxNTRkNGNhZmMyNjJhZmY2OTc3YmU4YSJ9fX0=")),
-    PILLAGER(114, "Pillager", Arrays.asList(
-	"NGFlZTZiYjM3Y2JmYzkyYjBkODZkYjVhZGE0NzkwYzY0ZmY0NDY4ZDY4Yjg0OTQyZmRlMDQ0MDVlOGVmNTMzMyJ9fX0=")),
     VILLAGER(120, "Villager", Arrays.asList(
 	"ODIyZDhlNzUxYzhmMmZkNGM4OTQyYzQ0YmRiMmY1Y2E0ZDhhZThlNTc1ZWQzZWIzNGMxOGE4NmU5M2IifX19")),
-    FOX(121, "Fox", Arrays.asList(
-	"YjZmZWI3NjFiMmY1OWZhYmU1Y2MzY2M4MmE5MzRiNTM0ZWE5OWVkYjkxMzJjY2RhOWY0ODRiZDU5ODZkNyJ9fX0=",
-	"MjRhMDM0NzQzNjQzNGViMTNkNTM3YjllYjZiNDViNmVmNGM1YTc4Zjg2ZTkxODYzZWY2MWQyYjhhNTNiODIifX19",
-	"MTZkYjdkNTA3Mzg5YTE0YmJlYzM5ZGU2OTIyMTY1YjMyZDQzNjU3YmNiNmFhZjRiNTE4MjgyNWIyMmI0In19fQ==")),
     ENDER_CRYSTAL(200, "End Crystal"),
-    WANDERING_TRADER(604, "Wandering Trader", Arrays.asList(
-	"NWYxMzc5YTgyMjkwZDdhYmUxZWZhYWJiYzcwNzEwZmYyZWMwMmRkMzRhZGUzODZiYzAwYzkzMGM0NjFjZjkzMiJ9fX0=")),
     TURTLE(901, "Turtle", Arrays.asList(
 	"MGE0MDUwZTdhYWNjNDUzOTIwMjY1OGZkYzMzOWRkMTgyZDdlMzIyZjlmYmNjNGQ1Zjk5YjU3MThhIn19fQ==")),
     PHANTOM(902, "Phantom", Arrays.asList(
@@ -233,18 +220,38 @@ public enum CMIEntityType {
     COMPLEX_PART(915, "Complex Part"),
     TIPPED_ARROW(916, "Tipped Arrow"),
 
-    TRADER_LLAMA(918, "Trader Llama", Arrays.asList(
-	"ODQyNDc4MGIzYzVjNTM1MWNmNDlmYjViZjQxZmNiMjg5NDkxZGY2YzQzMDY4M2M4NGQ3ODQ2MTg4ZGI0Zjg0ZCJ9fX0=",
-	"NzA4N2E1NTZkNGZmYTk1ZWNkMjg0NGYzNTBkYzQzZTI1NGU1ZDUzNWZhNTk2ZjU0MGQ3ZTc3ZmE2N2RmNDY5NiJ9fX0=",
-	"YmU0ZDhhMGJjMTVmMjM5OTIxZWZkOGJlMzQ4MGJhNzdhOThlZTdkOWNlMDA3MjhjMGQ3MzNmMGEyZDYxNGQxNiJ9fX0=")),
+    PANDA(917, "Panda", Arrays.asList(
+	"ZDE4OGM5ODBhYWNmYTk0Y2YzMzA4ODUxMmIxYjk1MTdiYTgyNmIxNTRkNGNhZmMyNjJhZmY2OTc3YmU4YSJ9fX0=")),
+    PILLAGER(918, "Pillager", Arrays.asList(
+	"NGFlZTZiYjM3Y2JmYzkyYjBkODZkYjVhZGE0NzkwYzY0ZmY0NDY4ZDY4Yjg0OTQyZmRlMDQ0MDVlOGVmNTMzMyJ9fX0=")),
     RAVAGER(919, "Ravager", Arrays.asList(
 	"MWNiOWYxMzlmOTQ4OWQ4NmU0MTBhMDZkOGNiYzY3MGM4MDI4MTM3NTA4ZTNlNGJlZjYxMmZlMzJlZGQ2MDE5MyJ9fX0=",
 	"M2I2MjUwMWNkMWI4N2IzN2Y2MjgwMTgyMTBlYzU0MDBjYjY1YTRkMWFhYjc0ZTZhM2Y3ZjYyYWE4NWRiOTdlZSJ9fX0=")),
+    TRADER_LLAMA(920, "Trader Llama", Arrays.asList(
+	"ODQyNDc4MGIzYzVjNTM1MWNmNDlmYjViZjQxZmNiMjg5NDkxZGY2YzQzMDY4M2M4NGQ3ODQ2MTg4ZGI0Zjg0ZCJ9fX0=",
+	"NzA4N2E1NTZkNGZmYTk1ZWNkMjg0NGYzNTBkYzQzZTI1NGU1ZDUzNWZhNTk2ZjU0MGQ3ZTc3ZmE2N2RmNDY5NiJ9fX0=",
+	"YmU0ZDhhMGJjMTVmMjM5OTIxZWZkOGJlMzQ4MGJhNzdhOThlZTdkOWNlMDA3MjhjMGQ3MzNmMGEyZDYxNGQxNiJ9fX0=")),
+    WANDERING_TRADER(921, "Wandering Trader", Arrays.asList(
+	"NWYxMzc5YTgyMjkwZDdhYmUxZWZhYWJiYzcwNzEwZmYyZWMwMmRkMzRhZGUzODZiYzAwYzkzMGM0NjFjZjkzMiJ9fX0=")),
+    FOX(922, "Fox", Arrays.asList(
+	"YjZmZWI3NjFiMmY1OWZhYmU1Y2MzY2M4MmE5MzRiNTM0ZWE5OWVkYjkxMzJjY2RhOWY0ODRiZDU5ODZkNyJ9fX0=",
+	"MjRhMDM0NzQzNjQzNGViMTNkNTM3YjllYjZiNDViNmVmNGM1YTc4Zjg2ZTkxODYzZWY2MWQyYjhhNTNiODIifX19",
+	"MTZkYjdkNTA3Mzg5YTE0YmJlYzM5ZGU2OTIyMTY1YjMyZDQzNjU3YmNiNmFhZjRiNTE4MjgyNWIyMmI0In19fQ==")),
+    CAT(923, "Cat", Arrays.asList(
+	"N2M5Yjc0MDllN2I1MzgzYzE5YjM2MmIyYTBjYjQzZDUwOTNiMTNlMmIyMzRlOGExODkxNTYzZTU1ZWFlOWQ2OCJ9fX0=",
+	"NTg4MDNmMDI3MGY4Y2RmNGUwZmU5NzMyZDQ5NjdjY2NjMGEyZjRmY2QxMThjZDE1MDAwOTc5YjE4ODg1MTQ0ZiJ9fX0=")),
     BEE(924, "Bee", Arrays.asList(
 	"OTQ3MzIyZjgzMWUzYzE2OGNmYmQzZTI4ZmU5MjUxNDRiMjYxZTc5ZWIzOWM3NzEzNDlmYWM1NWE4MTI2NDczIn19fQ==",
 	"OTlkYzNmMDBlY2FiMjI0OWJiNmExNmM4YzUxMTVjZWI5ZjIzMjA1YTBkNTVjYzBlOWJhYmQyNTYyZjc5NTljNCJ9fX0==",
 	"ZTZiNzRlMDUyYjc0Mjg4Nzk5YmE2ZDlmMzVjNWQwMjIxY2Y4YjA0MzMxNTQ3ZWMyZjY4ZDczNTk3YWUyYzliIn19fQ==",
 	"YmIxNzc3NDY2MjUxMmQ3ODdlZjc3YjFhNDZhMDRlMmM2ZmQ2Nzc5NGJmN2Y3Nzk1NjZlYjIxYzgxNDNhYWQ5ZSJ9fX0=")),
+
+    ZOMBIFIED_PIGLIN(929, "Zombified Piglin", Arrays.asList("N2VhYmFlY2M1ZmFlNWE4YTQ5Yzg4NjNmZjQ4MzFhYWEyODQxOThmMWEyMzk4ODkwYzc2NWUwYThkZTE4ZGE4YyJ9fX0=")),
+    HOGLIN(925, "Hoglin", Arrays.asList("OWJiOWJjMGYwMWRiZDc2MmEwOGQ5ZTc3YzA4MDY5ZWQ3Yzk1MzY0YWEzMGNhMTA3MjIwODU2MWI3MzBlOGQ3NSJ9fX0=")),
+    PIGLIN(926, "Piglin", Arrays.asList("OWYxODEwN2QyNzVmMWNiM2E5Zjk3M2U1OTI4ZDU4NzlmYTQwMzI4ZmYzMjU4MDU0ZGI2ZGQzZTdjMGNhNjMzMCJ9fX0=")),
+    STRIDER(927, "Strider", Arrays.asList("MThhOWFkZjc4MGVjN2RkNDYyNWM5YzA3NzkwNTJlNmExNWE0NTE4NjY2MjM1MTFlNGM4MmU5NjU1NzE0YjNjMSJ9fX0=")),
+    ZOGLIN(928, "Zoglin", Arrays.asList("ZTY3ZTE4NjAyZTAzMDM1YWQ2ODk2N2NlMDkwMjM1ZDg5OTY2NjNmYjllYTQ3NTc4ZDNhN2ViYmM0MmE1Y2NmOSJ9fX0=")),
+
     // if possible we can remove this string for each texture to save up some space
     // eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUv
     UNKNOWN(999, "Unknown");
@@ -253,7 +260,6 @@ public enum CMIEntityType {
     private String name;
     private String secondaryName;
     EntityType type = null;
-    public static HashMap<String, ItemStack> cache = new HashMap<String, ItemStack>();
 
     CMIEntityType(int id, String name, List<String> headTextures) {
 	this(id, name, null, headTextures);
@@ -271,6 +277,11 @@ public enum CMIEntityType {
 	this.id = id;
 	this.name = name;
 	this.secondaryName = secondaryName;
+	for (String one : headTextures) {
+	    String text = one;
+	    if (text.length() < 150)
+		text = "" + text;
+	}
     }
 
     public int getId() {
@@ -322,6 +333,7 @@ public enum CMIEntityType {
 	    main = name.split("_")[0];
 	    sub = name.split("_")[1];
 	}
+
 	if (name.contains(":")) {
 	    main = name.split(":")[0];
 	    sub = name.split(":")[1];
@@ -432,15 +444,20 @@ public enum CMIEntityType {
 	CMIEntityType ctype = CMIEntityType.getByType(type);
 	if (ctype != null)
 	    return ctype.getName();
-
 	String name = type.name();
+
 	name = name.toLowerCase().replace("_", " ");
 	name = name.substring(0, 1).toUpperCase() + name.substring(1);
 	return name;
     }
 
     public CMIMaterial getSpawnEggMaterial() {
+
 	CMIMaterial m = CMIMaterial.get((this.equals(CMIEntityType.MUSHROOM_COW) ? "Mooshroom".toLowerCase() : this.toString().toLowerCase()) + "_spawn_egg");
-	return m != null && m.isMonsterEgg() ? m : null;
+
+	if (m != null && m.isMonsterEgg())
+	    return m;
+
+	return null;
     }
 }

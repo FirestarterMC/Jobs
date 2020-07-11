@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -413,7 +414,7 @@ public abstract class JobsDAO {
 
 	public String getQuery() {
 	    String rp = "";
-	    List<JobsTableInterface> uniques = new ArrayList<JobsTableInterface>();
+	    List<JobsTableInterface> uniques = new ArrayList<>();
 	    for (JobsTableInterface one : this.getInterface()) {
 		if (one.isUnique()) {
 		    uniques.add(one);
@@ -652,19 +653,18 @@ public abstract class JobsDAO {
 	    res = prest.executeQuery();
 	    while (res.next()) {
 		int id = res.getInt(JobsTableFields.userid.getCollumn());
-		String jobName = res.getString(JobsTableFields.job.getCollumn());
 		List<JobsDAOData> ls = map.get(id);
 		if (ls == null)
 		    ls = new ArrayList<>();
 
 		int jobId = res.getInt(JobsTableFields.jobid.getCollumn());
 		if (jobId == 0) {
-		    ls.add(new JobsDAOData(jobName, res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
+		    ls.add(new JobsDAOData(res.getString(JobsTableFields.job.getCollumn()), res.getInt(JobsTableFields.level.getCollumn()), res.getDouble(JobsTableFields.experience.getCollumn())));
 		    converted = false;
 		} else {
 		    // This should be removed when we switch over to id only method
 		    if (converted)
-			if (jobName == null || jobName.isEmpty())
+			if (res.getString(JobsTableFields.job.getCollumn()) == null || res.getString(JobsTableFields.job.getCollumn()).isEmpty())
 			    converted = false;
 
 		    Job job = Jobs.getJob(jobId);
@@ -801,19 +801,18 @@ public abstract class JobsDAO {
 	return map;
     }
 
-    private HashMap<Integer, ArrayList<JobsDAOData>> map = new HashMap<>();
-
-    public List<JobsDAOData> getAllJobs(PlayerInfo pInfo) {
-	return map.getOrDefault(pInfo.getID(), new ArrayList<JobsDAOData>());
-    }
-
     public void cleanUsers() {
 	if (!Jobs.getGCManager().DBCleaningUsersUse)
 	    return;
+
 	JobsConnection conn = getConnection();
 	if (conn == null)
 	    return;
-	long mark = System.currentTimeMillis() - (Jobs.getGCManager().DBCleaningUsersDays * 24 * 60 * 60 * 1000);
+
+	Calendar cal = Calendar.getInstance();
+	cal.add(Calendar.DATE, -Jobs.getGCManager().DBCleaningUsersDays);
+	long mark = cal.getTimeInMillis();
+
 	PreparedStatement prest = null;
 	try {
 	    prest = conn.prepareStatement("DELETE FROM `" + DBTables.UsersTable.getTableName() + "` WHERE `" + UserTableFields.seen.getCollumn() + "` < ?;");
@@ -829,9 +828,11 @@ public abstract class JobsDAO {
     public void cleanJobs() {
 	if (!Jobs.getGCManager().DBCleaningJobsUse)
 	    return;
+
 	JobsConnection conn = getConnection();
 	if (conn == null)
 	    return;
+
 	PreparedStatement prest = null;
 	try {
 	    prest = conn.prepareStatement("DELETE FROM `" + getJobsTableName() + "` WHERE `" + JobsTableFields.level.getCollumn() + "` <= ?;");
@@ -938,9 +939,8 @@ public abstract class JobsDAO {
 	}
 
 	for (World one : Bukkit.getWorlds()) {
-	    if (Util.getJobsWorld(one.getName()) != null)
-		continue;
-	    this.recordNewWorld(one.getName());
+	    if (Util.getJobsWorld(one.getName()) == null)
+		recordNewWorld(one.getName());
 	}
 
 	return;
@@ -1123,14 +1123,6 @@ public abstract class JobsDAO {
 	PreparedStatement prestt = null;
 	ResultSet res2 = null;
 	try {
-	    prestt = conn.prepareStatement("DELETE FROM `" + DBTables.JobNameTable.getTableName()
-		+ "` WHERE `" + jobsNameTableFields.name.getCollumn() + "` = ?;");
-	    prestt.setString(1, job.getName());
-	    prestt.execute();
-
-	    close(prestt);
-	    prestt = null;
-
 	    prestt = conn.prepareStatement("INSERT INTO `" + DBTables.JobNameTable.getTableName() + "` (`" + jobsNameTableFields.name.getCollumn() + "`) VALUES (?);",
 		Statement.RETURN_GENERATED_KEYS);
 	    prestt.setString(1, job.getName());
@@ -1715,7 +1707,7 @@ public abstract class JobsDAO {
 	    prest = conn.prepareStatement("SELECT * FROM `" + DBTables.UsersTable.getTableName() + "` WHERE `" + UserTableFields.player_uuid.getCollumn() + "` = ?;");
 	    prest.setString(1, uuid.toString());
 	    res = prest.executeQuery();
-	    while (res.next()) {
+	    if (res.next()) {
 		pInfo = new PlayerInfo(
 		    res.getString(UserTableFields.username.getCollumn()),
 		    res.getInt("id"), uuid,
@@ -2693,10 +2685,6 @@ public abstract class JobsDAO {
 	    } catch (SQLException e) {
 		e.printStackTrace();
 	    }
-    }
-
-    public HashMap<Integer, ArrayList<JobsDAOData>> getMap() {
-	return map;
     }
 
     public String getJobsTableName() {

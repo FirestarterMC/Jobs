@@ -15,15 +15,14 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
 import com.gamingmesh.jobs.Jobs;
-import com.gamingmesh.jobs.CMILib.VersionChecker.Version;
 import com.gamingmesh.jobs.container.Potion;
 import com.gamingmesh.jobs.stuff.Util;
 
 public class ItemManager {
 
-    static HashMap<Material, CMIMaterial> byRealMaterial = new HashMap<Material, CMIMaterial>();
-    static HashMap<Integer, CMIMaterial> byId = new HashMap<Integer, CMIMaterial>();
-    static HashMap<String, CMIMaterial> byName = new HashMap<String, CMIMaterial>();
+    static HashMap<Material, CMIMaterial> byRealMaterial = new HashMap<>();
+    static HashMap<Integer, CMIMaterial> byId = new HashMap<>();
+    static HashMap<String, CMIMaterial> byName = new HashMap<>();
 
     public HashMap<Integer, CMIMaterial> idMap() {
 	return byId;
@@ -52,7 +51,7 @@ public class ItemManager {
 	    String mojangName = null;
 	    try {
 		if (Version.isCurrentEqualOrLower(Version.v1_14_R1) || mat.isItem())
-		    mojangName = ItemReflection.getItemMinecraftName(new ItemStack(mat));
+		    mojangName = CMIReflections.getItemMinecraftName(new ItemStack(mat));
 	    } catch (Exception e) {
 		e.printStackTrace();
 	    }
@@ -60,11 +59,10 @@ public class ItemManager {
 		: mojangName.replace("_", "").replace(" ", "").toLowerCase();
 
 	    if (one.isCanHavePotionType()) {
-		    for (Potion p : Potion.values()) {
-			    byName.put(cmiName + ":" + p.getName(), one);
-		    }
+		for (Potion p : Potion.values()) {
+		    byName.put(cmiName + ":" + p.getName().toLowerCase(), one);
 		}
-	    else if (byName.containsKey(cmiName)) {
+	    } else if (byName.containsKey(cmiName)) {
 		byName.put(cmiName + ":" + data, one);
 	    } else
 		byName.put(cmiName, one);
@@ -218,7 +216,7 @@ public class ItemManager {
 	return cm;
     }
 
-    HashMap<String, ItemStack> headCache = new HashMap<String, ItemStack>();
+    HashMap<String, ItemStack> headCache = new HashMap<>();
 
     public CMIItemStack getItem(String name) {
 //	if (byBukkitName.isEmpty())
@@ -291,7 +289,7 @@ public class ItemManager {
 		    ItemStack skull = Util.getSkull(d);
 		    if (skull == null) {
 			break main;
-			}
+		    }
 
 		    headCache.put(original, skull);
 		    cm.setItemStack(skull);
@@ -471,7 +469,7 @@ public class ItemManager {
     }
 
     public List<Recipe> getAllRecipes() {
-	List<Recipe> results = new ArrayList<Recipe>();
+	List<Recipe> results = new ArrayList<>();
 	Iterator<Recipe> iter = Bukkit.recipeIterator();
 	while (iter.hasNext()) {
 	    Recipe recipe = iter.next();
@@ -481,7 +479,7 @@ public class ItemManager {
     }
 
     public List<Recipe> getRecipesFor(ItemStack result) {
-	List<Recipe> results = new ArrayList<Recipe>();
+	List<Recipe> results = new ArrayList<>();
 	Iterator<Recipe> iter = Bukkit.recipeIterator();
 	while (iter.hasNext()) {
 	    Recipe recipe = iter.next();

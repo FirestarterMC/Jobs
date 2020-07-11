@@ -81,7 +81,7 @@ public class QuestProgression {
     public boolean isCompleted() {
 	for (Entry<ActionType, HashMap<String, QuestObjective>> oneA : quest.getObjectives().entrySet()) {
 	    for (Entry<String, QuestObjective> one : oneA.getValue().entrySet()) {
-		Integer amountDone = this.done.get(one.getValue());
+		Integer amountDone = done.get(one.getValue());
 		if (amountDone == null || amountDone < one.getValue().getAmount())
 		    return false;
 	    }
@@ -161,9 +161,6 @@ public class QuestProgression {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), ev.getCommand().startsWith("/") ? ev.getCommand().substring(1) : ev.getCommand());
 	    }
 	}
-
-	return;
-
     }
 
     public boolean isGivenReward() {

@@ -31,8 +31,8 @@ public class PotionItemActionInfo extends ItemActionInfo {
         this.potionType = potionType;
     }
 
-    public String getNameWithPotion() {
-        return getName() + ":" + potionType.name();
+    @Override
+    public String getNameWithSub() {
+        return getName() + ":" + potionType.toString();
     }
-
 }

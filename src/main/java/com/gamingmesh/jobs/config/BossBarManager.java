@@ -9,7 +9,7 @@ import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 
 import com.gamingmesh.jobs.Jobs;
-import com.gamingmesh.jobs.CMILib.VersionChecker.Version;
+import com.gamingmesh.jobs.CMILib.Version;
 import com.gamingmesh.jobs.container.BossBarInfo;
 import com.gamingmesh.jobs.container.Job;
 import com.gamingmesh.jobs.container.JobProgression;
@@ -72,7 +72,7 @@ public class BossBarManager {
 
 	String message = Jobs.getLanguage().getMessage("command.stats.bossBarOutput",
 	    "%joblevel%", Integer.valueOf(jobProg.getLevel()).toString(),
-	    "%jobname%", jobProg.getJob().getChatColor() + jobProg.getJob().getName(),
+	    "%jobname%", jobProg.getJob().getNameWithColor(),
 	    "%jobxp%", formatter.format(Math.round(jobProg.getExperience() * 100.0) / 100.0),
 	    "%jobmaxxp%", jobProg.getMaxExperience(),
 	    "%gain%", gain);
@@ -105,7 +105,7 @@ public class BossBarManager {
 		}
 	    }
 	    BarStyle style = BarStyle.SOLID;
-	    switch (Jobs.getGCManager().SegementCount) {
+	    switch (Jobs.getGCManager().SegmentCount) {
 	    case 6:
 		style = BarStyle.SEGMENTED_6;
 		break;

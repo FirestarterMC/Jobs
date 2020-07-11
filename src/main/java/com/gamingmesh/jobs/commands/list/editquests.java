@@ -17,7 +17,7 @@ import com.gamingmesh.jobs.CMILib.CMIEntityType;
 import com.gamingmesh.jobs.CMILib.CMIMaterial;
 import com.gamingmesh.jobs.CMILib.ItemReflection;
 import com.gamingmesh.jobs.CMILib.RawMessage;
-import com.gamingmesh.jobs.CMILib.VersionChecker.Version;
+import com.gamingmesh.jobs.CMILib.Version;
 import com.gamingmesh.jobs.commands.Cmd;
 import com.gamingmesh.jobs.commands.JobCommand;
 import com.gamingmesh.jobs.container.ActionType;
@@ -35,7 +35,9 @@ public class editquests implements Cmd {
     @Override
     @JobCommand(721)
     public boolean perform(Jobs plugin, CommandSender sender, String[] args) {
-	if (sender instanceof Player) {
+	if (!(sender instanceof Player))
+	    return false;
+
 	    Player player = (Player) sender;
 
 	    if (args.length == 0) {
@@ -49,8 +51,8 @@ public class editquests implements Cmd {
 
 		    for (Job one : Jobs.getJobs()) {
 			RawMessage rm = new RawMessage();
-			rm.add(Jobs.getLanguage().getMessage("command.editquests.help.list.jobs", "%jobname%", one.getChatColor()
-			    + one.getName()), one.getName(), "jobs editquests list " + one.getName());
+			rm.add(Jobs.getLanguage().getMessage("command.editquests.help.list.jobs", "%jobname%", one.getNameWithColor()),
+			    one.getName(), "jobs editquests list " + one.getName());
 			rm.show(sender);
 		    }
 
@@ -180,7 +182,6 @@ public class editquests implements Cmd {
 		    }
 
 		    HashMap<String, QuestObjective> obj = quest.getObjectives().get(actionT);
-
 		    if (obj == null || obj.isEmpty())
 			return false;
 
@@ -449,14 +450,19 @@ public class editquests implements Cmd {
 			    entity = EntityType.valueOf(myKey.toUpperCase());
 			}
 
-			if (entity != null && entity.isAlive()) {
+		    if (entity != null) {
+			if (entity.isAlive()) {
 			    type = entity.toString();
 			    id = entity.getTypeId();
 
 			    // using breeder finder
 			    if (actionT == ActionType.BREED)
 				Jobs.getGCManager().useBreederFinder = true;
+			} else if (entity == EntityType.ENDER_CRYSTAL) {
+			    type = entity.toString();
+			    id = entity.getTypeId();
 			}
+		    }
 
 			if (entity == null) {
 			    switch (key.toLowerCase()) {
@@ -576,7 +582,6 @@ public class editquests implements Cmd {
 		    }
 
 		    Util.getQuestsEditorMap().remove(player.getUniqueId());
-
 		    return true;
 		}
 
@@ -584,7 +589,7 @@ public class editquests implements Cmd {
 	    default:
 		break;
 	    }
-	}
+
 	return false;
     }
 
@@ -595,8 +600,8 @@ public class editquests implements Cmd {
 
 	if (job != null) {
 	    rm = new RawMessage();
-	    rm.add(Jobs.getLanguage().getMessage("command.editquests.help.list.jobs", "%jobname%", job.getChatColor()
-		+ job.getName()), job.getName(), "jobs editquests list " + job.getName());
+	    rm.add(Jobs.getLanguage().getMessage("command.editquests.help.list.jobs", "%jobname%", job.getNameWithColor()),
+		job.getName(), "jobs editquests list " + job.getName());
 	    rm.show(player);
 	}
 

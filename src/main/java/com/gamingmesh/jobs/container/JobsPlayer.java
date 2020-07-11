@@ -31,6 +31,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.gamingmesh.jobs.Jobs;
+import com.gamingmesh.jobs.CMILib.ActionBarManager;
+import com.gamingmesh.jobs.CMILib.CMIChatColor;
 import com.gamingmesh.jobs.Signs.SignTopType;
 import com.gamingmesh.jobs.dao.JobsDAO;
 import com.gamingmesh.jobs.economy.PaymentData;
@@ -174,7 +176,7 @@ public class JobsPlayer {
 		data.setInformed();
 	    }
 	    if (data.IsAnnounceTime(limit.getAnnouncementDelay()) && player.isOnline())
-		Jobs.getActionBar().send(player, Jobs.getLanguage().getMessage("command.limit.output." + name + "time", "%time%", TimeManage.to24hourShort(data.GetLeftTime(type))));
+		ActionBarManager.send(player, Jobs.getLanguage().getMessage("command.limit.output." + name + "time", "%time%", TimeManage.to24hourShort(data.GetLeftTime(type))));
 	    if (data.isReseted())
 		data.setReseted(false);
 	    return false;
@@ -539,14 +541,12 @@ public class JobsPlayer {
     public void promoteJob(Job job, int levels) {
 //	synchronized (saveLock) {
 	JobProgression prog = getJobProgression(job);
-	if (prog == null)
+	if (prog == null || levels <= 0)
 	    return;
-	if (levels <= 0)
-	    return;
-	int oldLevel = prog.getLevel();
-	int newLevel = oldLevel + levels;
 
-	int maxLevel = job.getMaxLevel(this);
+	int oldLevel = prog.getLevel(),
+	    newLevel = oldLevel + levels,
+	    maxLevel = job.getMaxLevel(this);
 
 	if (maxLevel > 0 && newLevel > maxLevel)
 	    newLevel = maxLevel;
@@ -563,10 +563,9 @@ public class JobsPlayer {
     public void demoteJob(Job job, int levels) {
 //	synchronized (saveLock) {
 	JobProgression prog = getJobProgression(job);
-	if (prog == null)
+	if (prog == null || levels <= 0)
 	    return;
-	if (levels <= 0)
-	    return;
+
 	int newLevel = prog.getLevel() - levels;
 	if (newLevel < 1)
 	    newLevel = 1;
@@ -618,7 +617,6 @@ public class JobsPlayer {
 		reloadLimits();
 		reloadHonorific();
 		Jobs.getPermissionHandler().recalculatePermissions(this);
-
 		return true;
 	    }
 	}
@@ -628,11 +626,14 @@ public class JobsPlayer {
 
     public int getMaxJobLevelAllowed(Job job) {
 	int maxLevel = 0;
-	if (getPlayer() != null && getPlayer().hasPermission("jobs." + job.getName() + ".vipmaxlevel"))
+	if (getPlayer() != null && (getPlayer().hasPermission("jobs." + job.getName() + ".vipmaxlevel") || getPlayer().hasPermission("jobs.all.vipmaxlevel")))
 	    maxLevel = job.getVipMaxLevel() > job.getMaxLevel() ? job.getVipMaxLevel() : job.getMaxLevel();
 	else
 	    maxLevel = job.getMaxLevel();
 	int tMax = Jobs.getPermissionManager().getMaxPermission(this, "jobs." + job.getName() + ".vipmaxlevel").intValue();
+	if (tMax > maxLevel)
+	    maxLevel = tMax;
+	tMax = Jobs.getPermissionManager().getMaxPermission(this, "jobs.all.vipmaxlevel").intValue();
 	if (tMax > maxLevel)
 	    maxLevel = tMax;
 	return maxLevel;
@@ -687,7 +688,7 @@ public class JobsPlayer {
 			if (gotTitle) {
 			    builder.append(" ");
 			}
-			String honorificpart = prog.getJob().getChatColor() + prog.getJob().getName() + ChatColor.WHITE;
+			String honorificpart = prog.getJob().getNameWithColor() + ChatColor.WHITE;
 			if (honorificpart.contains("{level}"))
 			    honorificpart = honorificpart.replace("{level}", String.valueOf(prog.getLevel()));
 			builder.append(honorificpart);
@@ -737,8 +738,7 @@ public class JobsPlayer {
 
 	honorific = builder.toString().trim();
 	if (honorific.length() > 0)
-	    honorific = org.bukkit.ChatColor.translateAlternateColorCodes('&',
-		Jobs.getGCManager().modifyChatPrefix + honorific + Jobs.getGCManager().modifyChatSuffix);
+	    honorific = CMIChatColor.translate(Jobs.getGCManager().modifyChatPrefix + honorific + Jobs.getGCManager().modifyChatSuffix);
 
     }
 
@@ -915,7 +915,7 @@ public class JobsPlayer {
 		continue;
 	    }
 
-	    oneQ.setValidUntil(oneQ.getQuest().getValidUntil());
+	    oneQ.setValidUntil(System.currentTimeMillis());
 	    for (Entry<ActionType, HashMap<String, QuestObjective>> base : oneQ.getQuest().getObjectives().entrySet()) {
 		for (Entry<String, QuestObjective> obj : base.getValue().entrySet()) {
 		    oneQ.setAmountDone(obj.getValue(), 0);

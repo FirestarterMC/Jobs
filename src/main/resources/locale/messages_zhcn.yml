@@ -312,6 +312,7 @@ command:
       cantJoin: '&cYou can''t join to the selected job.'
       max: '&e最高等级:&f '
       back: '&e<<< 返回'
+      next: '&eNext >>>'
     output:
       break:
         info: '破坏'
@@ -513,7 +514,7 @@ command:
       show: '&2显示 &e[from] &2到 &e[until] &2的排行榜'
   gtop:
     help:
-      info: 显示全部职业中最强的 %amount% 名玩家.
+      info: Shows top players by global jobs level.
       args: ''
     error:
       nojob: 没有找到任何信息, 你这是新服吧23333.

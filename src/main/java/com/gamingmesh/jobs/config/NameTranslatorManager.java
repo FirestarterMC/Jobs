@@ -1,11 +1,8 @@
 package com.gamingmesh.jobs.config;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
@@ -18,16 +15,15 @@ import com.gamingmesh.jobs.CMILib.ConfigReader;
 import com.gamingmesh.jobs.container.ActionType;
 import com.gamingmesh.jobs.container.JobInfo;
 import com.gamingmesh.jobs.container.NameList;
+import com.gamingmesh.jobs.container.Potion;
 import com.gamingmesh.jobs.hooks.HookManager;
 import com.gamingmesh.jobs.stuff.Util;
 
 public class NameTranslatorManager {
 
-    public HashMap<CMIMaterial, NameList> ListOfNames = new HashMap<>();
-    public ArrayList<NameList> ListOfEntities = new ArrayList<>();
-    public HashMap<String, NameList> ListOfEnchants = new HashMap<>();
-    public HashMap<String, NameList> ListOfMMEntities = new HashMap<>();
-    public ArrayList<NameList> ListOfColors = new ArrayList<>();
+	private final HashMap<CMIMaterial, NameList> ListOfNames = new HashMap<>();
+    private final ArrayList<NameList> ListOfEntities = new ArrayList<>(), ListOfColors = new ArrayList<>();
+    private final HashMap<String, NameList> ListOfEnchants = new HashMap<>(), ListOfMMEntities = new HashMap<>();
 
     public String Translate(String materialName, JobInfo info) {
 	return Translate(materialName, info.getActionType(), info.getId(), info.getMeta(), info.getName());
@@ -50,14 +46,22 @@ public class NameTranslatorManager {
 	    case BREW:
 	    case FISH:
 	    case STRIPLOGS:
+		String fallbackMaterialName = Arrays.stream(materialName.split("\\s|:"))
+		.map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
+		.collect(Collectors.joining(" ")); // returns capitalized word (from this -> To This)
+
 		materialName = materialName.replace(" ", "");
 
 		CMIMaterial mat = CMIMaterial.get(materialName.replace(" ", ""));
 		NameList nameLs = ListOfNames.get(mat);
 
-		if (nameLs != null) {
-		    return nameLs.getName();
+	    if (nameLs != null) {
+		if (meta != null && !meta.isEmpty() && mat.isCanHavePotionType() && Potion.getByName(meta) != null) {
+		    return nameLs.getName() + ":" + meta;
 		}
+
+		return nameLs.getName();
+	    }
 
 		if (mame != null && !mame.isEmpty()) {
 		    mat = CMIMaterial.get(materialName.replace(" ", ""));
@@ -72,13 +76,18 @@ public class NameTranslatorManager {
 		    mat = CMIMaterial.get(materialName + ":" + meta);
 		    nameLs = ListOfNames.get(mat);
 		    if (nameLs == null) {
-		    	mat = CMIMaterial.get(materialName.replace(" ", ""));
-		    	nameLs = ListOfNames.get(mat);
-		    	NameList nameMeta = ListOfNames.get(CMIMaterial.get(meta.replace(" ", "")));
-		    	if (nameLs != null && nameMeta != null) {
-		    		return nameLs + ":" + nameMeta;
-			    }
-				return mat.getName();
+			mat = CMIMaterial.get(materialName.replace(" ", ""));
+			nameLs = ListOfNames.get(mat);
+			NameList nameMeta = ListOfNames.get(CMIMaterial.get(meta.replace(" ", "")));
+			if (nameLs != null && nameMeta != null) {
+			    return nameLs + ":" + nameMeta;
+			}
+
+			if (mat.equals(CMIMaterial.NONE)) {
+			    return fallbackMaterialName;
+			}
+
+			return mat.getName();
 		    }
 		}
 
@@ -159,7 +168,7 @@ public class NameTranslatorManager {
 	    Set<String> keys = section.getKeys(false);
 	    ListOfNames.clear();
 	    for (String one : keys) {
-		String split = one.split("-")[0];
+		String split = one.contains("-") ? one.split("-")[0] : one;
 		String id = split.contains(":") ? split.split(":")[0] : split;
 		String meta = split.contains(":") && split.split(":").length > 1 ? split.split(":")[1] : "";
 
@@ -177,10 +186,10 @@ public class NameTranslatorManager {
 	    Set<String> keys = section.getKeys(false);
 	    ListOfEntities.clear();
 	    for (String one : keys) {
-		String split = one.split("-")[0];
+		String split = one.contains("-") ? one.split("-")[0] : one;
 		String id = split.contains(":") ? split.split(":")[0] : split;
 		String meta = split.contains(":") ? split.split(":")[1] : "";
-		String MCName = one.split("-")[1];
+		String MCName = one.contains("-") && one.split(":").length > 1 ? one.split("-")[1] : one;
 		String Name = ItemFile.getConfig().getString("EntityList." + one);
 		ListOfEntities.add(new NameList(id, meta, Name, MCName));
 	    }
@@ -220,7 +229,7 @@ public class NameTranslatorManager {
 	    Set<String> keys = section.getKeys(false);
 	    ListOfColors.clear();
 	    for (String one : keys) {
-		String id = one.split("-")[0];
+		String id = one.contains("-") ? one.split("-")[0] : one;
 		String MCName = one.split("-")[1];
 		String Name = ItemFile.getConfig().getString("ColorList." + one);
 		ListOfColors.add(new NameList(id, "", Name, MCName));
@@ -419,26 +428,26 @@ public class NameTranslatorManager {
 	    /**	    for (colorNames cn : colorNames.values()) {
 	    		if (cn.getName() == null)
 	    		    continue;
-	    
+
 	    		String n = cn.getId() + (cn.getId() == -1 ? "" : ":" + cn.getName());
-	    
+
 	    		String name = null;
-	    
+
 	    		if (c.getC().isConfigurationSection("ColorList." + n)) {
 	    		    name = c.getC().getString("ColorList." + n + ".Name");
 	    		}
-	    
+
 	    		if (name == null) {
 	    		    n = cn.getId() + "-" + cn.toString();
 	    		    if (c.getC().isConfigurationSection("ColorList." + n)) {
 	    			name = c.getC().getString("ColorList." + n);
 	    		    }
 	    		}
-	    
+
 	    		if (name == null) {
 	    		    name = cn.getName();
 	    		}
-	    
+
 	    		c.get("ColorList." + cn.getId() + "-" + cn.toString(), name);
 	    }*/
 

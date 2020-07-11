@@ -15,6 +15,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.gamingmesh.jobs.Jobs;
+import com.gamingmesh.jobs.CMILib.ActionBarManager;
 import com.gamingmesh.jobs.CMILib.RawMessage;
 import com.gamingmesh.jobs.container.ActionType;
 import com.gamingmesh.jobs.container.Boost;
@@ -146,7 +147,7 @@ public class JobsCommands implements CommandExecutor {
 
 	PageInfo pi = new PageInfo(7, commands.size(), page);
 	if (page > pi.getTotalPages() || page < 1) {
-	    Jobs.getActionBar().send(sender, Jobs.getLanguage().getMessage("general.error.noHelpPage"));
+	    ActionBarManager.send(sender, Jobs.getLanguage().getMessage("general.error.noHelpPage"));
 	    return true;
 	}
 
@@ -307,7 +308,7 @@ public class JobsCommands implements CommandExecutor {
 			message.add(m);
 		} else if (showAllTypes == 0) {
 		    String myMessage = Jobs.getLanguage().getMessage("command.info.output." + actionType.getName().toLowerCase() + ".none");
-		    myMessage = myMessage.replace("%jobname%", job.getChatColor() + job.getName());
+		    myMessage = myMessage.replace("%jobname%", job.getNameWithColor());
 		    message.add(myMessage);
 		}
 	    }
@@ -421,7 +422,7 @@ public class JobsCommands implements CommandExecutor {
 	Title title = Jobs.gettitleManager().getTitle(jobProg.getLevel(), jobProg.getJob().getName());
 	String message = Jobs.getLanguage().getMessage("command.stats.output",
 	    "%joblevel%", jobProg.getLevel(),
-	    "%jobname%", jobProg.getJob().getChatColor() + jobProg.getJob().getName(),
+	    "%jobname%", jobProg.getJob().getNameWithColor(),
 	    "%jobxp%", Math.round(jobProg.getExperience() * 100.0) / 100.0,
 	    "%jobmaxxp%", jobProg.getMaxExperience(),
 	    "%titlename%", title == null ? "Unknown" : title.getName());
@@ -460,7 +461,7 @@ public class JobsCommands implements CommandExecutor {
 	double exp = jPlayer.getExpAfterRejoin(jobProg, jPlayer.getLevelAfterRejoin(jobProg));
 	String message = Jobs.getLanguage().getMessage("command.stats.output",
 	    "%joblevel%", level,
-	    "%jobname%", jobProg.getJob().getChatColor() + jobProg.getJob().getName(),
+	    "%jobname%", jobProg.getJob().getNameWithColor(),
 	    "%jobxp%", Math.round(exp * 100.0) / 100.0,
 	    "%jobmaxxp%", jobProg.getMaxExperience(level));
 	return " " + jobProgressMessage(jobProg.getMaxExperience(level), exp) + " " + message;

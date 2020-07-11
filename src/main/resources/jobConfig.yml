@@ -119,7 +119,7 @@ Jobs:
         # Command list to be performed after quest is finished.
         # Use [playerName] to insert players name who finished that quest
         RewardCommands:
-        - "money give [playerName] 500"
+        - "eco give [playerName] 500"
         - "msg [playerName] Completed quest!"
         # Quest description to be used to explain quest requirements or rewards for player
         RewardDesc:
@@ -146,7 +146,7 @@ Jobs:
         Objectives:
         - Kill;Zombie;50
         RewardCommands:
-        - "money give [playerName] 2000"
+        - "eco give [playerName] 2000"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Kill 50 zombies"
@@ -156,7 +156,7 @@ Jobs:
         Objectives:
         - "Smelt;COOKED_CHICKEN;20"
         RewardCommands:
-        - "money give [playerName] 300"
+        - "eco give [playerName] 300"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Cook some chicken breasts"
@@ -226,6 +226,20 @@ Jobs:
         # you can use minuses to take away money if the player break this block
         income: -1.0
         experience: -1.0
+      # you can use here "-all" sub name to specify if we detect all wool colours
+      wool-all:
+        income: 2.0
+        points: 1.0
+        experience: 1.0
+      log-all:
+        income: 1.0
+        points: 1.0
+        experience: 1.0
+      # you should start material name like this, to detect if that material is exists
+      white_banner-all:
+        income: 1.0
+        points: 1.0
+        experience: 1.0
     # Payment for collecting things like sweet berry bush, composter or honey
     Collect:
       sweet_berry_bush-3:
@@ -431,6 +445,10 @@ Jobs:
       "!Healing Bandage":
         income: 1.0
         experience: 6.0
+      # If you add ":" after the tipped_arrow then you can use effect names like in example
+      tipped_arrow:slowness:
+        income: 3.0
+        points: 3.0
     # Smelting ores
     Smelt:
       iron_ingot:
@@ -611,7 +629,7 @@ Jobs:
         - Break;birch_log;50
         - Break;jungle_log;50
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Break logs and get money"
@@ -728,7 +746,7 @@ Jobs:
         - Break;granite;50
         - Break;sandstone;50
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Break blocks and get money"
@@ -924,7 +942,7 @@ Jobs:
         - Place;birch_planks;50
         - Place;wool;50
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Place blocks and get money"
@@ -1676,7 +1694,7 @@ Jobs:
         - Break;grass_block;50
         - Break;gravel;50
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Dig blocks and get money"
@@ -1745,7 +1763,7 @@ Jobs:
         - Shear;White;10
         - Milk;Cow;3
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Be a farmer and get money"
@@ -2138,7 +2156,7 @@ Jobs:
         - Kill;Creeper;3
         - Kill;Skeleton;10
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Kill everything what moves and get money"
@@ -2295,7 +2313,7 @@ Jobs:
         Objectives:
         - Explore;1;30
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Go on a trip and get money"
@@ -2349,7 +2367,7 @@ Jobs:
         - Craft;chest;10
         - Craft;ladder;30
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Craft and get money"
@@ -2836,7 +2854,7 @@ Jobs:
         - Fish;salmon;2
         - Fish;tropical_fish;2
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Catch fish and get money"
@@ -2886,7 +2904,7 @@ Jobs:
         - Craft;iron_chestplate;2
         - Craft;gold_leggings;2
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Craft weapons and get money"
@@ -3038,7 +3056,7 @@ Jobs:
         - Brew;redstone;2
         - Brew;sugar;2
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Brew some stuff and get money"
@@ -3137,7 +3155,7 @@ Jobs:
         - Enchant;diamond_sword;1
         - Enchant;ARROW_DAMAGE;1
         RewardCommands:
-        - "money give [playerName] 100"
+        - "eco give [playerName] 100"
         - "msg [playerName] Completed quest!"
         RewardDesc:
         - "Be a wizard and get money"

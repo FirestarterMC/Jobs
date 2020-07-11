@@ -19,42 +19,47 @@
 package com.gamingmesh.jobs.container;
 
 /**
- * <a href="https://minecraft.gamepedia.com/Potion#Java_Edition">Minecraft-WIKI reference</a>
+ * <a href="https://papermc.io/javadocs/paper/1.13/org/bukkit/potion/PotionType.html">API reference for names</a>
  */
 public enum Potion {
-    NIGHT_VISION("Night Vision"),
-    INVISIBILITY("Invisibility"),
-    LEAPING("Leaping"),
-    FIRE_RESISTANCE("Fire Resistance"),
-    SWIFTNESS("Swiftness"),
-    SLOWNESS("Slowness"),
-    WATER_BREATHING("Water Breathing"),
-    HEALING("Instant Health"),
-    HARMING("Harming"),
-    POISON("Poison"),
-    REGENERATION("Regeneration"),
-    STRENGTH("Strength"),
-    WEAKNESS("Weakness"),
-    LUCK("Luck"),
-    TURTLE_MASTER("The Turtle Master"),
-    SLOW_FALLING("Slow Falling");
+    AWKWARD("awkward"),
+    FIRE_RESISTANCE("fire_resistance"),
+    INSTANT_DAMAGE("instant_damage"),
+    INSTANT_HEAL("instant_heal"),
+    INVISIBILITY("invisibility"),
+    JUMP("jump"),
+    LUCK("luck"),
+    MUNDANE("mundane"),
+    NIGHT_VISION("night_vision"),
+    LONG_NIGHT_VISION("long_night_vision"),
+    POISON("poison"),
+    REGENERATION("regeneration"),
+    SLOW_FALLING("slow_falling"),
+    SLOWNESS("slowness"),
+    SPEED("speed"),
+    STRENGTH("strength"),
+    THICK("thick"),
+    TURTLE_MASTER("turtle_master"),
+    WATER_BREATHING("water_breathing"),
+    WEAKNESS("weakness");
 
     private final String name;
 
     Potion(String name) {
-	this.name = name;
+        this.name = name.toUpperCase();
     }
 
     public String getName() {
-	return name;
+        return name;
     }
 
     public static Potion getByName(String name) {
-	name = name.replace("_", "");
-	for (Potion one : Potion.values()) {
-	    if (one.name.equalsIgnoreCase(name))
-		return one;
-	}
-	return null;
+        for (Potion one : Potion.values()) {
+            if (one.name.equalsIgnoreCase(name)) {
+                return one;
+            }
+        }
+
+        return null;
     }
 }

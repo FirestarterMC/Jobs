@@ -4,51 +4,64 @@
 
 package com.gamingmesh.jobs.CMILib;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 import com.gamingmesh.jobs.Jobs;
 
-public class Reflections {
+public class CMIReflections {
 
-    private Class<?> CraftServerClass;
-    private Object CraftServer;
+    //private Class<?> CraftServerClass;
+    //private Object CraftServer;
 
     private static Class<?> NBTTagCompound;
-    private Class<?> NBTBase;
+    private static Class<?> NBTBase;
 //    private Class<?> NBTTagList;
 
     private static Class<?> CraftItemStack;
-//    private Class<?> Item;
+    private static Class<?> Item;
     private static Class<?> IStack;
 
-    public Reflections() {
-	initialize();
-    }
-
-    private void initialize() {
+    static {
 	try {
-	    CraftServerClass = getBukkitClass("CraftServer");
-	    CraftServer = CraftServerClass.cast(Bukkit.getServer());
+	    //CraftServerClass = getBukkitClass("CraftServer");
+	    //CraftServer = CraftServerClass.cast(Bukkit.getServer());
 	    NBTTagCompound = getMinecraftClass("NBTTagCompound");
 	    NBTBase = getMinecraftClass("NBTBase");
-	/*try {
+	    /*try {
 	    NBTTagList = getMinecraftClass("NBTTagList");
-	} catch (ClassNotFoundException | SecurityException | IllegalArgumentException e) {
+	    } catch (ClassNotFoundException | SecurityException | IllegalArgumentException e) {
 	    e.printStackTrace();
-	}*/
+	    }*/
 	    CraftItemStack = getBukkitClass("inventory.CraftItemStack");
-	/*try {
-	    Item = getMinecraftClass("Item");
-	} catch (ClassNotFoundException | SecurityException | IllegalArgumentException e) {
-	    e.printStackTrace();
-	}*/
+	    try {
+		Item = getMinecraftClass("Item");
+	    } catch (ClassNotFoundException | SecurityException | IllegalArgumentException e) {
+		e.printStackTrace();
+	    }
 	    IStack = getMinecraftClass("ItemStack");
 	} catch (ClassCastException | ClassNotFoundException e) {
 	    e.printStackTrace();
 	}
+    }
+
+    public static String toJson(ItemStack item) {
+	if (item == null)
+	    return null;
+
+	Object nmsStack = asNMSCopy(item);
+
+	try {
+	    Method meth = IStack.getMethod("save", NBTTagCompound);
+	    Object res = meth.invoke(nmsStack, NBTTagCompound.newInstance());
+	    return res.toString();
+	} catch (Throwable e) {
+	    e.printStackTrace();
+	}
+
+	return null;
     }
 
     private static Class<?> getBukkitClass(String nmsClassString) throws ClassNotFoundException {
@@ -177,37 +190,6 @@ public class Reflections {
 	}
     }
 
-//
-//    public ItemStack setNbt(ItemStack item, String base, String path, String value) {
-//	if (item == null)
-//	    return null;
-//	try {
-//	    Object nmsStack = asNMSCopy(item);
-//	    Method methTag = nmsStack.getClass().getMethod("getTag");
-//	    Object tag = methTag.invoke(nmsStack);
-//	    if (tag == null)
-//		tag = NBTTagCompound.newInstance();
-//
-//	    Method compountMeth = tag.getClass().getMethod("getCompound", String.class);
-//	    Object compountTag = compountMeth.invoke(tag, base);
-//
-//	    if (compountTag == null)
-//		compountTag = NBTTagCompound.newInstance();
-//
-//	    Method meth = compountTag.getClass().getMethod("setString", String.class, String.class);
-//	    meth.invoke(compountTag, path, value);
-//
-//	    Method mm = tag.getClass().getMethod("set", String.class, NBTBase);
-//	    mm.invoke(tag, base, compountTag);
-//
-//	    Method meth2 = nmsStack.getClass().getMethod("setTag", NBTTagCompound);
-//	    meth2.invoke(nmsStack, tag);
-//	    return (ItemStack) asBukkitCopy(nmsStack);
-//	} catch (Throwable e) {
-//	    e.printStackTrace();
-//	    return null;
-//	}
-//    }
     public static ItemStack setNbt(ItemStack item, String path, String value) {
 	if (item == null)
 	    return null;
@@ -251,6 +233,7 @@ public class Reflections {
 	    Method meth = CraftItemStack.getMethod("asNMSCopy", ItemStack.class);
 	    return meth.invoke(CraftItemStack, item);
 	} catch (Throwable e) {
+	    e.printStackTrace();
 	    return null;
 	}
     }
@@ -264,8 +247,50 @@ public class Reflections {
 	}
     }
 
-    public Object getCraftServer() {
-	return CraftServer;
+    public static String getItemMinecraftName(ItemStack item) {
+	try {
+
+	    Object nmsStack = asNMSCopy(item);
+	    if (nmsStack == null)
+		return null;
+	    if (Version.isCurrentEqualOrHigher(Version.v1_13_R1)) {
+		Object pre = nmsStack.getClass().getMethod("getItem").invoke(nmsStack);
+		Object n = pre.getClass().getMethod("getName").invoke(pre);
+		Class<?> ll = Class.forName("net.minecraft.server." + Version.getCurrent() + ".LocaleLanguage");
+		Object lla = ll.getMethod("a").invoke(ll);
+		return (String) lla.getClass().getMethod("a", String.class).invoke(lla, (String) n);
+	    }
+
+	    Field field = Item.getField("REGISTRY");
+	    Object reg = field.get(field);
+	    Method meth = reg.getClass().getMethod("b", Object.class);
+	    meth.setAccessible(true);
+	    Method secmeth = nmsStack.getClass().getMethod("getItem");
+	    Object res2 = secmeth.invoke(nmsStack);
+	    Object res = meth.invoke(reg, res2);
+	    return res.toString();
+	} catch (Exception e) {
+	    return null;
+	}
     }
 
+    public String getItemMinecraftNamePath(ItemStack item) {
+	try {
+	    Object nmsStack = asNMSCopy(item);
+	    Method itemMeth = Item.getMethod("getById", int.class);
+	    @SuppressWarnings("deprecation")
+	    Object res = itemMeth.invoke(Item, item.getType().getId());
+	    Method nameThingy = Item.getMethod("j", IStack);
+	    Object resThingy = nameThingy.invoke(res, nmsStack);
+	    return resThingy.toString();
+	} catch (Throwable e) {
+	    return null;
+	}
+    }
+
+    public static ItemStack getItemInOffHand(org.bukkit.entity.Player player) {
+	if (Jobs.getVersionCheckManager().getVersion().isLower(Version.v1_9_R1))
+	    return null;
+	return player.getInventory().getItemInOffHand();
+    }
 }

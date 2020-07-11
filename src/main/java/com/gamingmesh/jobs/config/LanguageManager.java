@@ -18,11 +18,6 @@ public class LanguageManager {
 	return languages;
     }
 
-    @Deprecated
-    public static List<String> getClassesFromPackage(String pckgname, String cleaner) throws ClassNotFoundException {
-	return Util.getFilesFromPackage(pckgname, cleaner, "yml");
-    }
-
     /**
      * Method to load the language file configuration
      * 
@@ -354,6 +349,7 @@ public class LanguageManager {
 	    c.get("command.info.gui.cantJoin", "&cYou can't join to the selected job.");
 	    c.get("command.info.gui.max", "&eMax level:&f ");
 	    c.get("command.info.gui.back", "&e<<< Back");
+	    c.get("command.info.gui.next", "&eNext >>>");
 
 	    c.get("command.info.output.break.info", "&eBreak");
 	    c.get("command.info.output.break.none", "%jobname% does not get money for breaking blocks.");
@@ -512,7 +508,7 @@ public class LanguageManager {
 	    c.get("command.top.output.next", "&2|&e Next Page >>>>");
 	    c.get("command.top.output.show", "&2Show from &e[from] &2until &e[until] &2top list");
 
-	    c.get("command.gtop.help.info", "Shows top %amount% players by global jobs level.");
+	    c.get("command.gtop.help.info", "Shows top players by global jobs level.");
 	    c.get("command.gtop.help.args", "");
 	    c.get("command.gtop.error.nojob", "Can't find any information.");
 	    c.get("command.gtop.output.topline", "&aTop&e %amount% &aplayers by global job level");

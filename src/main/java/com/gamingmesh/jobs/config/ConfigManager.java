@@ -18,11 +18,12 @@
 
 package com.gamingmesh.jobs.config;
 
+import com.gamingmesh.jobs.CMILib.CMIChatColor;
 import com.gamingmesh.jobs.CMILib.CMIEnchantment;
 import com.gamingmesh.jobs.CMILib.CMIEntityType;
 import com.gamingmesh.jobs.CMILib.CMIMaterial;
 import com.gamingmesh.jobs.CMILib.ConfigReader;
-import com.gamingmesh.jobs.CMILib.VersionChecker.Version;
+import com.gamingmesh.jobs.CMILib.Version;
 import com.gamingmesh.jobs.ItemBoostManager;
 import com.gamingmesh.jobs.Jobs;
 import com.gamingmesh.jobs.container.*;
@@ -31,11 +32,9 @@ import com.gamingmesh.jobs.stuff.ChatColor;
 import com.gamingmesh.jobs.stuff.Util;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
@@ -163,6 +162,8 @@ public class ConfigManager {
 	cfg.addComment(pt + ".Gui", "GUI icon information when using GUI function");
 	cfg.addComment(pt + ".Gui.Item", "Name of the material");
 	cfg.get(pt + ".Gui.Item", "LOG:2");
+	cfg.addComment(pt + ".Gui.slot", "Slot number to show the item in the specified row");
+	cfg.get(pt + ".Gui.slot", 5);
 	cfg.addComment(pt + ".Gui.Enchantments", "Enchants of the item");
 	cfg.get(pt + ".Gui.Enchantments", Arrays.asList("DURABILITY:1"));
 
@@ -385,9 +386,9 @@ public class ConfigManager {
 
     @SuppressWarnings("deprecation")
     public KeyValues getKeyValue(String myKey, ActionType actionType, String jobName) {
-	String type = null;
-	String subType = "";
-	String meta = "";
+	String type = null,
+	    subType = "",
+	    meta = "";
 	int id = 0;
 
 	if (myKey.contains("-")) {
@@ -395,17 +396,21 @@ public class ConfigManager {
 	    subType = ":" + myKey.split("-")[1];
 	    meta = myKey.split("-")[1];
 	    myKey = myKey.split("-")[0];
+	} else if (myKey.contains(":")) { // when we uses tipped arrow effect types
+	    String[] split = myKey.split(":");
+	    meta = split.length > 1 ? split[1] : myKey;
+	    myKey = split[0];
 	}
 
-	CMIMaterial material = null;
+	CMIMaterial material = CMIMaterial.NONE;
 
 	switch (actionType) {
 	case KILL:
 	case MILK:
 	case MMKILL:
 	case BOSS:
-	case TAME:
 	case BREED:
+	case TAME:
 	case SHEAR:
 	case EXPLORE:
 	case CUSTOMKILL:
@@ -427,15 +432,15 @@ public class ConfigManager {
 	case COLLECT:
 	    material = CMIMaterial.get(myKey + (subType));
 
-	    if (material == null)
+	    if (material == CMIMaterial.NONE)
 		material = CMIMaterial.get(myKey.replace(" ", "_").toUpperCase());
 
-	    if (material == null) {
+	    if (material == CMIMaterial.NONE) {
 		// try integer method
 		Integer matId = null;
 		try {
 		    matId = Integer.valueOf(myKey);
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException ignored) {
 		}
 		if (matId != null) {
 		    material = CMIMaterial.get(matId);
@@ -445,15 +450,25 @@ public class ConfigManager {
 		    }
 		}
 	    }
+
 	    break;
-	default:
+		default:
 	    break;
+		}
 
-	}
+		if (actionType == ActionType.STRIPLOGS && Version.isCurrentLower(Version.v1_13_R1))
+		    return null;
 
-	c: if (material != null && material.getMaterial() != null) {
+		if (material != null && material.getMaterial() != null && material.isAir()) {
+		    Jobs.getPluginLogger().warning("Job " + jobName + " " + actionType.getName() + " can't recognize material! (" + myKey + ")");
+		    return null;
+		}
 
-	    // Need to include thos ones and count as regular blocks
+		if (material != null && Version.isCurrentLower(Version.v1_13_R1) && meta.isEmpty())
+		    meta = String.valueOf(material.getData());
+
+		c: if (material != null && material != CMIMaterial.NONE && material.getMaterial() != null) {
+	    // Need to include those ones and count as regular blocks
 	    switch (myKey.replace("_", "").toLowerCase()) {
 	    case "itemframe":
 		type = "ITEM_FRAME";
@@ -477,11 +492,12 @@ public class ConfigManager {
 	    // Break and Place actions MUST be blocks
 	    if (actionType == ActionType.BREAK || actionType == ActionType.PLACE || actionType == ActionType.STRIPLOGS) {
 		if (!material.isBlock()) {
-		    Jobs.getPluginLogger().warning("Job " + jobName + " has an invalid " + actionType.getName() + " type property: " + material
-			+ "(" + myKey + ")! Material must be a block! Use \"/jobs blockinfo\" on a target block");
-		    return null;
+	    Jobs.getPluginLogger().warning("Job " + jobName + " has an invalid " + actionType.getName() + " type property: " + material
+		+ " (" + myKey + ")! Material must be a block! Use \"/jobs blockinfo\" on a target block");
+	    return null;
 		}
 	    }
+
 	    // START HACK
 	    /* 
 	     * Historically, GLOWING_REDSTONE_ORE would ONLY work as REDSTONE_ORE, and putting
@@ -508,24 +524,26 @@ public class ConfigManager {
 
 	    type = material.getMaterial().toString();
 	    id = material.getId();
-	} else if (actionType == ActionType.KILL || actionType == ActionType.TAME || actionType == ActionType.BREED || actionType == ActionType.MILK) {
-
+		} else if (actionType == ActionType.KILL || actionType == ActionType.TAME || actionType == ActionType.BREED || actionType == ActionType.MILK) {
 	    // check entities
-	    EntityType entity = EntityType.fromName(myKey);
-	    if (entity == null) {
-		entity = EntityType.valueOf(myKey);
+	    CMIEntityType entity = CMIEntityType.getByName(myKey);
+
+	    if (entity != null) {
+		if (entity.isAlive()) {
+		    type = entity.toString();
+		    id = entity.getId();
+
+		    // using breeder finder
+		    if (actionType == ActionType.BREED)
+			Jobs.getGCManager().useBreederFinder = true;
+		} else if (entity == CMIEntityType.ENDER_CRYSTAL) {
+		    type = entity.toString();
+		    id = entity.getId();
+		}
 	    }
 
-	    if (entity != null && entity.isAlive()) {
-		type = entity.toString();
-		id = entity.getTypeId();
-
-		// using breeder finder
-		if (actionType == ActionType.BREED)
-		    Jobs.getGCManager().useBreederFinder = true;
-	    }
-
-	    if (entity == null) {
+		    // Pre 1.13 checks for custom names
+		    if (entity == null) {
 		switch (myKey.toLowerCase()) {
 		case "skeletonwither":
 		    type = CMIEntityType.WITHER_SKELETON.name();
@@ -569,27 +587,46 @@ public class ConfigManager {
 
 	} else if (actionType == ActionType.ENCHANT) {
 	    CMIEnchantment enchant = CMIEnchantment.get(myKey);
+	    if (enchant == null && material == CMIMaterial.NONE) {
+		Jobs.getPluginLogger().warning("Job " + jobName + " has an invalid " + actionType.getName() + " type property: " + myKey + "!");
+		return null;
+	    }
+
 	    type = enchant == null ? myKey : enchant.toString();
-	} else if (actionType == ActionType.CUSTOMKILL || actionType == ActionType.SHEAR || actionType == ActionType.MMKILL
-	    || actionType == ActionType.COLLECT || actionType == ActionType.BAKE || actionType == ActionType.BOSS)
+	} else if (actionType == ActionType.CUSTOMKILL || actionType == ActionType.COLLECT || actionType == ActionType.MMKILL
+	    || actionType == ActionType.SHEAR || actionType == ActionType.BAKE || actionType == ActionType.BOSS) {
 	    type = myKey;
-	else if (actionType == ActionType.EXPLORE) {
+	} else if (actionType == ActionType.EXPLORE) {
 	    type = myKey;
+
 	    int amount = 10;
 	    try {
-		amount = Integer.valueOf(myKey);
+			amount = Integer.valueOf(myKey);
 	    } catch (NumberFormatException e) {
 		Jobs.getPluginLogger().warning("Job " + jobName + " has an invalid " + actionType.getName() + " type property: " + myKey + "!");
 		return null;
 	    }
+
 	    Jobs.getExplore().setExploreEnabled();
 	    Jobs.getExplore().setPlayerAmount(amount);
-	} else if (actionType == ActionType.CRAFT && myKey.startsWith("!"))
-	    type = myKey.substring(1, myKey.length());
+	} else if (actionType == ActionType.CRAFT) {
+	    if (myKey.startsWith("!")) {
+		type = myKey.substring(1, myKey.length());
+	    }
+
+	    if (myKey.contains(":")) {
+		subType = myKey.split(":")[1];
+	    }
+	}
 
 	if (type == null) {
 	    Jobs.getPluginLogger().warning("Job " + jobName + " has an invalid " + actionType.getName() + " type property: " + myKey + "!");
 	    return null;
+	}
+
+	if (":ALL".equalsIgnoreCase(subType)) {
+	    meta = "ALL";
+	    type = CMIMaterial.getGeneralMaterialName(type);
 	}
 
 	KeyValues kv = new KeyValues();
@@ -694,7 +731,7 @@ public class ConfigManager {
 		continue;
 	    }
 
-	    String description = org.bukkit.ChatColor.translateAlternateColorCodes('&', jobSection.getString("description", ""));
+	    String description = CMIChatColor.translate(jobSection.getString("description", ""));
 
 	    List<String> fDescription = new ArrayList<>();
 	    if (jobSection.contains("FullDescription")) {
@@ -703,13 +740,18 @@ public class ConfigManager {
 		else if (jobSection.isList("FullDescription"))
 		    fDescription.addAll(jobSection.getStringList("FullDescription"));
 		for (int i = 0; i < fDescription.size(); i++) {
-		    fDescription.set(i, org.bukkit.ChatColor.translateAlternateColorCodes('&', fDescription.get(i)));
+		    fDescription.set(i, CMIChatColor.translate(fDescription.get(i)));
 		}
 	    }
 
 	    ChatColor color = ChatColor.WHITE;
 	    if (jobSection.contains("ChatColour")) {
-		color = ChatColor.matchColor(jobSection.getString("ChatColour", ""));
+		String c = jobSection.getString("ChatColour", "");
+
+		color = ChatColor.matchColor(c);
+		if (color == null && !c.isEmpty())
+		    color = ChatColor.matchColor(c.charAt(0));
+
 		if (color == null) {
 		    color = ChatColor.WHITE;
 		    log.warning("Job " + jobKey + " has an invalid ChatColour property. Defaulting to WHITE!");
@@ -720,7 +762,7 @@ public class ConfigManager {
 	    if (jobSection.contains("BossBarColour")) {
 		bossbar = jobSection.getString("BossBarColour", "");
 		if (bossbar.isEmpty()) {
-		    color = ChatColor.WHITE;
+		    bossbar = "GREEN";
 		    log.warning("Job " + jobKey + " has an invalid BossBarColour property.");
 		}
 	    }
@@ -791,6 +833,7 @@ public class ConfigManager {
 	    }
 
 	    // Gui item
+	    int guiSlot = -1;
 	    ItemStack GUIitem = CMIMaterial.GREEN_WOOL.newItemStack();
 	    if (jobSection.contains("Gui")) {
 		ConfigurationSection guiSection = jobSection.getConfigurationSection("Gui");
@@ -827,37 +870,29 @@ public class ConfigManager {
 
 		    if (material != null)
 			GUIitem = material.newItemStack();
-
-		    if (guiSection.contains("Enchantments")) {
-			for (String str4 : guiSection.getStringList("Enchantments")) {
-			    String[] enchantid = str4.split(":");
-			    if ((GUIitem.getItemMeta() instanceof EnchantmentStorageMeta)) {
-				EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
-				enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(enchantid[0]), Integer.parseInt(enchantid[1]), true);
-				GUIitem.setItemMeta(enchantMeta);
-			    } else
-				GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(enchantid[0]), Integer.parseInt(enchantid[1]));
-			}
-		    } else if (guiSection.contains("CustomSkull")) {
-			GUIitem = Util.getSkull(guiSection.getString("CustomSkull"));
-		    }
 		} else if (guiSection.isInt("Id") && guiSection.isInt("Data")) {
 		    GUIitem = CMIMaterial.get(guiSection.getInt("Id"), guiSection.getInt("Data")).newItemStack();
-		    if (guiSection.contains("Enchantments")) {
-			for (String str4 : guiSection.getStringList("Enchantments")) {
-			    String[] id = str4.split(":");
-			    if ((GUIitem.getItemMeta() instanceof EnchantmentStorageMeta)) {
-				EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
-				enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]), true);
-				GUIitem.setItemMeta(enchantMeta);
-			    } else
-				GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]));
-			}
-		    } else if (guiSection.contains("CustomSkull")) {
-			GUIitem = Util.getSkull(guiSection.getString("CustomSkull"));
-		    }
 		} else
 		    log.warning("Job " + jobKey + " has an invalid Gui property. Please fix this if you want to use it!");
+
+	    if (guiSection.isList("Enchantments")) {
+		for (String str4 : guiSection.getStringList("Enchantments")) {
+		    String[] id = str4.split(":");
+		    if (GUIitem.getItemMeta() instanceof EnchantmentStorageMeta) {
+			EnchantmentStorageMeta enchantMeta = (EnchantmentStorageMeta) GUIitem.getItemMeta();
+			enchantMeta.addStoredEnchant(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]), true);
+			GUIitem.setItemMeta(enchantMeta);
+		    } else
+			GUIitem.addUnsafeEnchantment(CMIEnchantment.getEnchantment(id[0]), Integer.parseInt(id[1]));
+		}
+	    }
+
+	    if (guiSection.isString("CustomSkull")) {
+		GUIitem = Util.getSkull(guiSection.getString("CustomSkull"));
+	    }
+
+	    if (guiSection.getInt("slot", -1) >= 0)
+		guiSlot = guiSection.getInt("slot");
 	    }
 
 	    // Permissions
@@ -894,8 +929,8 @@ public class ConfigManager {
 			continue;
 		    }
 
-		    List<String> requires = permissionSection.getStringList("requires");
-		    List<String> perform = permissionSection.getStringList("perform");
+		    List<String> requires = permissionSection.getStringList("requires"),
+			perform = permissionSection.getStringList("perform");
 		    jobConditions.add(new JobConditions(ConditionKey.toLowerCase(), requires, perform));
 		}
 	    }
@@ -961,7 +996,7 @@ public class ConfigManager {
 		    List<String> lore = new ArrayList<>();
 		    if (itemSection.contains("lore"))
 			for (String eachLine : itemSection.getStringList("lore")) {
-			    lore.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', eachLine));
+			    lore.add(CMIChatColor.translate(eachLine));
 			}
 
 		    HashMap<Enchantment, Integer> enchants = new HashMap<>();
@@ -1017,7 +1052,7 @@ public class ConfigManager {
 		    List<String> lore = new ArrayList<>();
 		    if (itemSection.contains("lore"))
 			for (String eachLine : itemSection.getStringList("lore")) {
-			    lore.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', eachLine));
+			    lore.add(CMIChatColor.translate(eachLine));
 			}
 
 		    HashMap<Enchantment, Integer> enchants = new HashMap<>();
@@ -1045,7 +1080,7 @@ public class ConfigManager {
 	    }
 
 	    Job job = new Job(jobKey, jobFullName, jobShortName, description, color, maxExpEquation, displayMethod, maxLevel, vipmaxLevel, maxSlots, jobPermissions, jobCommand,
-		jobConditions, jobItems, jobLimitedItems, JobsCommandOnJoin, JobsCommandOnLeave, GUIitem, bossbar, rejoinCd, worldBlacklist);
+		jobConditions, jobItems, jobLimitedItems, JobsCommandOnJoin, JobsCommandOnLeave, GUIitem, guiSlot, bossbar, rejoinCd, worldBlacklist);
 
 	    job.setFullDescription(fDescription);
 	    job.setMoneyEquation(incomeEquation);
@@ -1122,9 +1157,9 @@ public class ConfigManager {
 
 			int chance = sqsection.getInt("Chance", 100);
 
-			List<String> commands = sqsection.getStringList("RewardCommands");
-			List<String> desc = sqsection.getStringList("RewardDesc");
-			List<String> areas = sqsection.getStringList("RestrictedAreas");
+			List<String> commands = sqsection.getStringList("RewardCommands"),
+			    desc = sqsection.getStringList("RewardDesc"),
+			    areas = sqsection.getStringList("RestrictedAreas");
 
 			if (sqsection.isInt("fromLevel"))
 			    quest.setMinLvl(sqsection.getInt("fromLevel"));
@@ -1149,9 +1184,9 @@ public class ConfigManager {
 	    }
 	    job.setMaxDailyQuests(jobSection.getInt("maxDailyQuests", 1));
 
-	    Integer softIncomeLimit = null;
-	    Integer softExpLimit = null;
-	    Integer softPointsLimit = null;
+	    Integer softIncomeLimit = null,
+		softExpLimit = null,
+		softPointsLimit = null;
 	    if (jobSection.isInt("softIncomeLimit"))
 		softIncomeLimit = jobSection.getInt("softIncomeLimit");
 	    if (jobSection.isInt("softExpLimit"))
@@ -1165,228 +1200,18 @@ public class ConfigManager {
 		if (typeSection != null) {
 		    for (String key : typeSection.getKeys(false)) {
 			ConfigurationSection section = typeSection.getConfigurationSection(key);
-			String myKey = key;
-			String type = null;
-			String subType = "";
-			String meta = "";
-			int id = 0;
-
-			if (myKey.contains("-")) {
-			    // uses subType
-			    subType = ":" + myKey.split("-")[1];
-			    meta = myKey.split("-")[1];
-			    myKey = myKey.split("-")[0];
-			}
-
-			CMIMaterial material = CMIMaterial.NONE;
-
-			switch (actionType) {
-			case KILL:
-			case MILK:
-			case MMKILL:
-			case BOSS:
-			case BREED:
-			case TAME:
-			case SHEAR:
-			case EXPLORE:
-			case CUSTOMKILL:
-			    break;
-			case TNTBREAK:
-			case VTRADE:
-			case SMELT:
-			case REPAIR:
-			case PLACE:
-			case EAT:
-			case FISH:
-			case ENCHANT:
-			case DYE:
-			case CRAFT:
-			case BAKE:
-			case BREW:
-			case BREAK:
-			case STRIPLOGS:
-			case COLLECT:
-			    material = CMIMaterial.get(myKey + (subType));
-
-			    if (material == CMIMaterial.NONE)
-				material = CMIMaterial.get(myKey.replace(" ", "_").toUpperCase());
-
-			    if (material == CMIMaterial.NONE) {
-				// try integer method
-				Integer matId = null;
-				try {
-				    matId = Integer.valueOf(myKey);
-				} catch (NumberFormatException e) {
-				}
-				if (matId != null) {
-				    material = CMIMaterial.get(matId);
-				    if (material != null) {
-					log.warning("Job " + jobKey + " " + actionType.getName() + " is using ID: " + key + "!");
-					log.warning("Please use the Material name instead: " + material.toString() + "!");
-				    }
-				}
-			    }
-
-			    break;
-			default:
-			    break;
-			}
-
-			if (actionType == ActionType.STRIPLOGS && Version.isCurrentLower(Version.v1_13_R1))
-			    continue;
-
-			if (material != null && material.getMaterial() != null && material.getMaterial() == Material.AIR) {
-			    log.warning("Job " + jobKey + " " + actionType.getName() + " cant recognize material! (" + key + ")");
+			if (section == null) {
 			    continue;
 			}
 
-			if (material != null && Version.isCurrentLower(Version.v1_13_R1) && meta.isEmpty())
-			    meta = String.valueOf(material.getData());
-
-			c: if (material != null && material != CMIMaterial.NONE && material.getMaterial() != null) {
-
-			    // Need to include those ones and count as regular blocks
-			    switch (key.replace("_", "").toLowerCase()) {
-			    case "itemframe":
-				type = "ITEM_FRAME";
-				id = 18;
-				meta = "1";
-				break c;
-			    case "painting":
-				type = "PAINTING";
-				id = 9;
-				meta = "1";
-				break c;
-			    case "armorstand":
-				type = "ARMOR_STAND";
-				id = 30;
-				meta = "1";
-				break c;
-			    default:
-				break;
-			    }
-
-			    // Break and Place actions MUST be blocks
-			    if (actionType == ActionType.BREAK || actionType == ActionType.PLACE || actionType == ActionType.STRIPLOGS) {
-				if (!material.isBlock()) {
-				    log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + material
-					+ " (" + key + ")! Material must be a block! Use \"/jobs blockinfo\" on a target block");
-				    continue;
-				}
-			    }
-			    // START HACK
-			    /* 
-			     * Historically, GLOWING_REDSTONE_ORE would ONLY work as REDSTONE_ORE, and putting
-			     * GLOWING_REDSTONE_ORE in the configuration would not work.  Unfortunately, this is 
-			     * completely backwards and wrong.
-			     * 
-			     * To maintain backwards compatibility, all instances of REDSTONE_ORE should normalize
-			     * to GLOWING_REDSTONE_ORE, and warn the user to change their configuration.  In the
-			     * future this hack may be removed and anybody using REDSTONE_ORE will have their
-			     * configurations broken.
-			     */
-			    if (material == CMIMaterial.REDSTONE_ORE && actionType == ActionType.BREAK && Version.isCurrentLower(Version.v1_13_R1)) {
-				log.warning("Job " + jobKey + " is using REDSTONE_ORE instead of GLOWING_REDSTONE_ORE.");
-				log.warning("Automatically changing block to GLOWING_REDSTONE_ORE. Please update your configuration.");
-				log.warning("In vanilla minecraft, REDSTONE_ORE changes to GLOWING_REDSTONE_ORE when interacted with.");
-				log.warning("In the future, Jobs using REDSTONE_ORE instead of GLOWING_REDSTONE_ORE may fail to work correctly.");
-				material = CMIMaterial.LEGACY_GLOWING_REDSTONE_ORE;
-			    } else if (material == CMIMaterial.LEGACY_GLOWING_REDSTONE_ORE && actionType == ActionType.BREAK && Version.isCurrentEqualOrHigher(Version.v1_13_R1)) {
-				log.warning("Job " + job.getName() + " is using GLOWING_REDSTONE_ORE instead of REDSTONE_ORE.");
-				log.warning("Automatically changing block to REDSTONE_ORE. Please update your configuration.");
-				material = CMIMaterial.REDSTONE_ORE;
-			    }
-			    // END HACK
-
-			    type = material.getMaterial().toString();
-			    id = material.getId();
-			} else if (actionType == ActionType.KILL || actionType == ActionType.TAME || actionType == ActionType.BREED || actionType == ActionType.MILK) {
-
-			    // check entities
-			    CMIEntityType entity = CMIEntityType.getByName(key);
-
-			    if (entity != null && entity.isAlive()) {
-				type = entity.toString();
-				id = entity.getId();
-
-				// using breeder finder
-				if (actionType == ActionType.BREED)
-				    Jobs.getGCManager().useBreederFinder = true;
-			    }
-
-			    // Pre 1.13 checks for custom names
-			    if (entity == null) {
-				switch (key.toLowerCase()) {
-				case "skeletonwither":
-				    type = CMIEntityType.WITHER_SKELETON.name();
-				    id = 51;
-				    meta = "1";
-				    break;
-				case "skeletonstray":
-				    type = CMIEntityType.STRAY.name();
-				    id = 51;
-				    meta = "2";
-				    break;
-				case "zombievillager":
-				    type = CMIEntityType.ZOMBIE_VILLAGER.name();
-				    id = 54;
-				    meta = "1";
-				    break;
-				case "zombiehusk":
-				    type = CMIEntityType.HUSK.name();
-				    id = 54;
-				    meta = "2";
-				    break;
-				case "horseskeleton":
-				    type = CMIEntityType.SKELETON_HORSE.name();
-				    id = 100;
-				    meta = "1";
-				    break;
-				case "horsezombie":
-				    type = CMIEntityType.ZOMBIE_HORSE.name();
-				    id = 100;
-				    meta = "2";
-				    break;
-				case "guardianelder":
-				    type = CMIEntityType.ELDER_GUARDIAN.name();
-				    id = 68;
-				    meta = "1";
-				    break;
-				default:
-				    break;
-				}
-			    }
-
-			} else if (actionType == ActionType.ENCHANT) {
-			    CMIEnchantment enchant = CMIEnchantment.get(myKey);
-			    if (enchant == null && material == CMIMaterial.NONE) {
-				log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
-				continue;
-			    }
-
-			    type = enchant == null ? myKey : enchant.toString();
-			} else if (actionType == ActionType.CUSTOMKILL || actionType == ActionType.COLLECT || actionType == ActionType.MMKILL
-			    || actionType == ActionType.SHEAR || actionType == ActionType.BAKE || actionType == ActionType.BOSS)
-			    type = myKey;
-			else if (actionType == ActionType.EXPLORE) {
-			    type = myKey;
-			    int amount = 10;
-			    try {
-				amount = Integer.valueOf(myKey);
-			    } catch (NumberFormatException e) {
-				log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
-				continue;
-			    }
-
-			    Jobs.getExplore().setExploreEnabled();
-			    Jobs.getExplore().setPlayerAmount(amount);
-			} else if (actionType == ActionType.CRAFT && myKey.startsWith("!"))
-			    type = myKey.substring(1, myKey.length());
-
-			if (type == null) {
-			    log.warning("Job " + jobKey + " has an invalid " + actionType.getName() + " type property: " + key + "!");
+			KeyValues keyValue = getKeyValue(key, actionType, jobKey);
+			if (keyValue == null)
 			    continue;
-			}
+
+			int id = keyValue.getId();
+			String type = keyValue.getType(),
+				subType = keyValue.getSubType(),
+				meta = keyValue.getMeta();
 
 			if (actionType == ActionType.TNTBREAK)
 			    Jobs.getGCManager().setTntFinder(true);
